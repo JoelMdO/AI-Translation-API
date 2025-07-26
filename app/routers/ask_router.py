@@ -25,10 +25,10 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 # import uvicorn
 # import os
-from app.schemas.translation import TranslationRequest, TranslationResponse
-from app.services.translation import translation_service
-from app.utils.auth import verify_user_access
-from app.schemas.testUser import GoogleUser
+from schemas.translation import TranslationRequest, TranslationResponse
+from services.translation import translation_service
+from utils.auth import verify_user_access
+from schemas.testUser import GoogleUser
 
 router = APIRouter()
 

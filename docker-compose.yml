@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   ollama:
     image: ollama/ollama
@@ -11,7 +9,7 @@ services:
     restart: unless-stopped
 
   fastapi:
-    build: ./fastapi
+    build: ./app
     container_name: fastapi
     depends_on:
       - ollama

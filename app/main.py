@@ -1,18 +1,14 @@
 """
 Main FastAPI application
-Simple translation API that validates JWT tokens and calls Ollama for translation
+Simple translation API that validates Google tokens and calls Ollama for translation
 """
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
-from typing import Callable, Awaitable
-from fastapi import Response
-from app.schemas.translation import HealthResponse
-from app.utils.generate_translation import ollama_service
-from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS, URL_AUTH, GOOGLE_CLIENT_ID
-# from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS, URL_AUTH, GOOGLE_CLIENT_ID, TESTING_MODE
-from app.routers import ask_router
+from schemas.translation import HealthResponse
+from utils.generate_translation import ollama_service
+from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+from routers import ask_router
 
 if( not ALLOWED_ORIGINS):
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file."
@@ -54,25 +50,8 @@ app.add_middleware(
 
 
 
-@app.middleware("http")
-async def google_auth_check(request: Request, call_next: Callable[[Request], Awaitable[Response]]):
-    # Public endpoints that don't require authentication
-    public_paths = ["/health"]
-    
-    if request.url.path in public_paths:
-        return await call_next(request)
-    
-    token = request.headers.get("Authorization")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing ID token")
-    
-    # PRODUCTION MODE: Real Google token validation
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{URL_AUTH}{token.split()[-1]}")
-        if response.status_code != 200 or response.json().get("aud") != GOOGLE_CLIENT_ID:
-            raise HTTPException(status_code=403, detail="Invalid token")
-
-    return await call_next(request)
+# Authentication is now handled by dependencies in individual routes
+# No middleware needed - this provides better error handling and debugging
 
 
 @app.get("/health", response_model=HealthResponse)
