@@ -1,192 +1,80 @@
-# Ollama API Wrapper
+# Ollama Translation API
 
-A FastAPI-based wrapper for the Ollama API that provides enhanced features and easy integration.
-
-## Features
-
-- 🚀 FastAPI-based REST API
-- 💬 Chat and Generate endpoints
-- 🌊 Streaming support for real-time responses
-- 📋 Model management
-- 🔍 Health checking
-- 🌐 CORS support
-- 📚 Automatic API documentation
-
-## Prerequisites
-
-1. **Install Ollama**: Download and install from [https://ollama.ai/](https://ollama.ai/)
-2. **Start Ollama**: Run `ollama serve` in your terminal
-3. **Pull a model**: Run `ollama pull llama3.2` (or your preferred model)
+Production-ready translation API using Ollama and Google Authentication.
 
 ## Quick Start
 
-1. **Install dependencies**:
+1. **Environment Setup**:
 
    ```bash
-   pip install -r requirements.txt
+   cp .env.production .env
+   # Edit .env with your Google Client ID
    ```
 
-2. **Configure environment** (optional):
-   Edit `.env` file to customize settings:
-
-   ```
-   OLLAMA_BASE_URL=http://localhost:11434
-   OLLAMA_DEFAULT_MODEL=llama3.2
-   API_HOST=0.0.0.0
-   API_PORT=8000
-   ```
-
-3. **Start the API server**:
+2. **Docker Deployment**:
 
    ```bash
-   python start.py
+   docker-compose up -d
    ```
 
-   Or directly:
+3. **Access API**:
+   - HTTPS: `https://joelmdo-lab.dev`
+   - Health: `https://joelmdo-lab.dev/health`
+   - Translate: `POST https://joelmdo-lab.dev/ask/ask`
 
-   ```bash
-   python main.py
-   ```
+## API Usage
 
-4. **Access the API**:
-   - API: http://localhost:8000
-   - Documentation: http://localhost:8000/docs
-   - Health check: http://localhost:8000/health
+### Authentication
 
-## API Endpoints
+Requires Google ID token from NextJS Google Sign-In.
 
-### Core Endpoints
+### Endpoints
 
-- `GET /` - API information
-- `GET /health` - Health check
-- `GET /models` - List available models
+#### POST /ask/ask
 
-### Chat Endpoints
+Translates text using Ollama.
 
-- `POST /chat` - Chat with a model
-- `POST /chat/stream` - Stream chat responses
-- `POST /chat/simple` - Simple chat interface
+**Headers:**
 
-### Generation Endpoints
-
-- `POST /generate` - Generate text
-- `POST /generate/stream` - Stream text generation
-
-## Usage Examples
-
-### Simple Chat
-
-```python
-import requests
-
-response = requests.post(
-    "http://localhost:8000/chat/simple",
-    params={"message": "Hello, how are you?"}
-)
-print(response.json())
+```
+Authorization: Bearer <google_id_token>
+Content-Type: application/json
+X-Request-Type: translation
+X-Service: cms-translate
+X-Source-DB: db
 ```
 
-### Advanced Chat
+**Request:**
 
-```python
-import requests
-
-data = {
-    "model": "llama3.2",
-    "messages": [
-        {"role": "user", "content": "Tell me a joke"}
-    ],
-    "temperature": 0.7
+```json
+{
+  "title": "Article Title",
+  "body": "Text to translate",
+  "section": "content",
+  "target_language": "spanish"
 }
-
-response = requests.post("http://localhost:8000/chat", json=data)
-print(response.json())
 ```
 
-### Streaming Chat
+**Response:**
 
-```python
-import requests
-
-data = {
-    "model": "llama3.2",
-    "messages": [
-        {"role": "user", "content": "Write a short story"}
-    ]
+```json
+{
+  "translated_text": "Translated content",
+  "success": true,
+  "model_used": "llama3.2"
 }
-
-response = requests.post(
-    "http://localhost:8000/chat/stream",
-    json=data,
-    stream=True
-)
-
-for line in response.iter_lines():
-    if line:
-        print(line.decode())
 ```
 
-## Testing
+#### GET /health
 
-Run the test script to verify everything is working:
+Public health check endpoint.
 
-```bash
-python test_api.py
-```
+## Environment Variables
 
-## Project Structure
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `OLLAMA_BASE_URL`: Ollama service URL
+- `ALLOWED_ORIGINS`: CORS allowed origins
 
-```
-OllamaAPI/
-├── main.py              # FastAPI application
-├── models.py            # Pydantic models
-├── ollama_client.py     # Ollama API client
-├── start.py             # Startup script
-├── test_api.py          # API testing script
-├── requirements.txt     # Dependencies
-├── .env                 # Environment configuration
-└── README.md           # This file
-```
+## Deployment
 
-## Configuration
-
-The API can be configured using environment variables or the `.env` file:
-
-| Variable               | Default                  | Description                        |
-| ---------------------- | ------------------------ | ---------------------------------- |
-| `OLLAMA_BASE_URL`      | `http://localhost:11434` | Ollama server URL                  |
-| `OLLAMA_DEFAULT_MODEL` | `llama3.2`               | Default model for simple endpoints |
-| `API_HOST`             | `0.0.0.0`                | API server host                    |
-| `API_PORT`             | `8000`                   | API server port                    |
-
-## Error Handling
-
-The API includes comprehensive error handling:
-
-- Connection errors to Ollama
-- Model not found errors
-- Invalid request validation
-- Timeout handling
-
-## Development
-
-### Running in Development Mode
-
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### API Documentation
-
-Visit http://localhost:8000/docs for interactive API documentation generated by FastAPI.
-
-## Troubleshooting
-
-1. **Ollama not accessible**: Make sure Ollama is running (`ollama serve`)
-2. **Model not found**: Pull the required model (`ollama pull <model_name>`)
-3. **Port conflicts**: Change the port in `.env` file
-4. **CORS issues**: Configure CORS settings in `main.py`
-
-## License
-
-This project is open source and available under the MIT License.
+Uses Docker with nginx for HTTPS termination and FastAPI for the API service.

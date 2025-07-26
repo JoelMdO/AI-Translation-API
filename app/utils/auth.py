@@ -2,21 +2,15 @@
 Google Authentication utilities with testing support
 Handles Google OAuth token validation for NextJS app integration
 """
-import os
-import jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from dotenv import load_dotenv
 from app.schemas.testUser import GoogleUser
+from app.config import GOOGLE_CLIENT_ID
 
 load_dotenv()
-
-# Configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "your-google-client-id-from-console")
-TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
-FAKE_SECRET = "fake-google-secret-for-testing"  # Only for testing
 
 # Security scheme
 security = HTTPBearer()
@@ -28,21 +22,11 @@ def verify_google_token(credentials: HTTPAuthorizationCredentials = Depends(secu
     Supports both real Google tokens and fake tokens for testing
     """
     try:
-        if TESTING_MODE:
-            # Testing mode: decode fake tokens (disable audience/exp verification for testing)
-            payload = jwt.decode( # type: ignore
-                credentials.credentials, 
-                FAKE_SECRET, 
-                algorithms=["HS256"],
-                options={
-                    "verify_aud": False,
-                    "verify_exp": False
-                }
-            )
-        else:
+        # Extract token from Bearer format
+        token = credentials.credentials
             # Production mode: verify real Google tokens
             payload = id_token.verify_oauth2_token( # type: ignore
-                credentials.credentials, 
+                token, 
                 requests.Request(), 
                 GOOGLE_CLIENT_ID
             )
@@ -63,24 +47,11 @@ def verify_google_token(credentials: HTTPAuthorizationCredentials = Depends(secu
             verified=payload.get("email_verified", False)
         )
         
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     except ValueError as e:
         # Invalid token
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid Google token: {str(e)}",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except Exception as e:
-        # Other errors
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token verification failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
