@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  fastapi:
+    build: ./fastapi
+    container_name: fastapi
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - GOOGLE_CLIENT_ID=246759562566-cv9qo0336rdcgh9o5jqn6v9lg9k7nhnm.apps.googleusercontent.com
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - fastapi
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
