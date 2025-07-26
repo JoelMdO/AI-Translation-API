@@ -15,9 +15,8 @@ services:
     container_name: fastapi
     depends_on:
       - ollama
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-      - GOOGLE_CLIENT_ID=246759562566-cv9qo0336rdcgh9o5jqn6v9lg9k7nhnm.apps.googleusercontent.com
+    env_file:
+      - .env
     restart: unless-stopped
 
   nginx:
