@@ -5,7 +5,7 @@ Manages all interactions with the Ollama translation service with HTML preservat
 import httpx
 import re
 from typing import List, Tuple, Match, Optional
-from ..config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
 
 class OllamaService:

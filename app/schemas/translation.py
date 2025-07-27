@@ -16,7 +16,7 @@ class TranslationRequest(BaseModel):
 
 class TranslationResponse(BaseModel):
     """Response schema for translation endpoint"""
-    translated_text: str = Field(..., description="The translated text")
+    translated_text: dict[str, str] = Field(..., description="The translated text as a JSON object with keys: title, body, section")
     success: bool = Field(..., description="Whether translation was successful")
     model_used: str = Field(..., description="Model used for translation")
 
