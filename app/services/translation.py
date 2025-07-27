@@ -2,12 +2,16 @@
 Translation service for handling business logic
 Coordinates between authentication, text processing, and Ollama communication
 """
-from utils.generate_translation import ollama_service
-from utils.sanitize_text import sanitize_text
-from utils.create_prompt_translation import create_prompt_translation
-from schemas.translation import TranslationRequest, TranslationResponse
+# from utils.generate_translation import ollama_service
+# from utils.sanitize_text import sanitize_text
+# from utils.create_prompt_translation import create_prompt_translation
+# from schemas.translation import TranslationRequest, TranslationResponse
 import re
-
+##//TODO change app before deploying 
+from app.utils.generate_translation import ollama_service
+from app.utils.sanitize_text import sanitize_text
+from app.utils.create_prompt_translation import create_prompt_translation
+from app.schemas.translation import TranslationRequest, TranslationResponse
 
 # import json
 
@@ -63,11 +67,13 @@ class TranslationService:
                     section=sanitized_section,
                     target_language=sanitized_target_language
                 )
+                # print(f"DEBUG: Generated prompt for translation: {prompt}")
                 # Get translation from Ollama (single call)
                 raw_translation = await ollama_service.generate_translation(
                     prompt=prompt,
                     model=request.model
                 )
+                # print(f"DEBUG: Raw translation response: {raw_translation}")
                 # Try to parse the response into fields (assuming format: Título: ... Cuerpo: ... Sección: ...)
                 sanitized = sanitize_text(raw_translation)
                 translated_title, translated_body, translated_section = None, None, None

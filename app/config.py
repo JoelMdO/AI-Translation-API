@@ -12,4 +12,4 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
 OLLAMA_DEFAULT_MODEL = os.getenv("OLLAMA_DEFAULT_MODEL")
 TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
-# DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
+DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"

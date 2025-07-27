@@ -25,10 +25,16 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 # import uvicorn
 # import os
-from schemas.translation import TranslationRequest, TranslationResponse
-from services.translation import translation_service
-from utils.auth import verify_user_access
-from schemas.testUser import GoogleUser
+# from schemas.translation import TranslationRequest, TranslationResponse
+# from services.translation import translation_service
+# from utils.auth import verify_user_access
+# from schemas.testUser import GoogleUser
+
+##//TODO change app before deploying 
+from app.schemas.translation import TranslationRequest, TranslationResponse
+from app.services.translation import translation_service
+from app.utils.auth import verify_user_access
+from app.schemas.testUser import GoogleUser
 
 router = APIRouter()
 
@@ -57,9 +63,11 @@ async def translate_text(
     try:
         # Process translation through service layer
         response = await translation_service.translate(request)
+        print(f"DEBUG: Translation successful: {response}")
         return response
         
     except Exception as e:
+        print(f"DEBUG: Translation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Translation failed: {str(e)}"
