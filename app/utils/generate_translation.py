@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 # from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
 ##//TODO change app before deploying 
-from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
 class OllamaService:
     """Service class for interacting with Ollama"""
@@ -464,12 +464,12 @@ Translate the following HTML content into Spanish.
                     "temperature": 0.3  # Lower temperature for consistent translations
                 }
                 
-                # response = await client.post(
-                #     f"{self.base_url}/api/generate",
-                #     json=payload
-                # ) 
+                response = await client.post(
+                    f"{self.base_url}/api/generate",
+                    json=payload
+                ) 
                 # //TODO change app before deploying
-                response = await client.post("http://localhost:11434/api/generate", json=payload)
+                # response = await client.post("http://localhost:11434/api/generate", json=payload)
 
                 print(f"DEBUG: Response status code: {response}")
                 response.raise_for_status()

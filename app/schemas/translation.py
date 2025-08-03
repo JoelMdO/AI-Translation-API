@@ -20,6 +20,9 @@ class TranslationResponse(BaseModel):
     success: bool = Field(..., description="Whether translation was successful")
     model_used: str = Field(..., description="Model used for translation")
 
+    class Config:
+        protected_namespaces = ()
+
 
 class HealthResponse(BaseModel):
     """Response schema for health check endpoint"""

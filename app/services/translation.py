@@ -8,10 +8,10 @@ Coordinates between authentication, text processing, and Ollama communication
 # from schemas.translation import TranslationRequest, TranslationResponse
 import re
 ##//TODO change app before deploying 
-from app.utils.generate_translation import ollama_service
-from app.utils.sanitize_text import sanitize_text
-from app.utils.create_prompt_translation import create_prompt_translation
-from app.schemas.translation import TranslationRequest, TranslationResponse
+from utils.generate_translation import ollama_service
+from utils.sanitize_text import sanitize_text
+from utils.create_prompt_translation import create_prompt_translation
+from schemas.translation import TranslationRequest, TranslationResponse
 
 # import json
 
@@ -67,13 +67,13 @@ class TranslationService:
                     section=sanitized_section,
                     target_language=sanitized_target_language
                 )
-                # print(f"DEBUG: Generated prompt for translation: {prompt}")
+                print(f"DEBUG: Generated prompt for translation: {prompt}")
                 # Get translation from Ollama (single call)
                 raw_translation = await ollama_service.generate_translation(
                     prompt=prompt,
                     model=request.model
                 )
-                # print(f"DEBUG: Raw translation response: {raw_translation}")
+                print(f"DEBUG: Raw translation response: {raw_translation}")
                 # Try to parse the response into fields (assuming format: Título: ... Cuerpo: ... Sección: ...)
                 sanitized = sanitize_text(raw_translation)
                 translated_title, translated_body, translated_section = None, None, None
@@ -84,7 +84,8 @@ class TranslationService:
                     translated_title = title_match.group(1).strip() if title_match else ''
                     translated_body = body_match.group(1).strip() if body_match else ''
                     translated_section = section_match.group(1).strip() if section_match else ''
-                except Exception:
+                except Exception as e:
+                    print(f"DEBUG: Parsing failed with error: {e}")
                     translated_title = sanitized
                     translated_body = ''
                     translated_section = ''
