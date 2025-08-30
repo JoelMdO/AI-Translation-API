@@ -8,14 +8,13 @@ from utils.ollama_services import ollama_service
 from utils.create_prompt_translation import create_prompt_translation
 from schemas.translation import TranslationRequest, TranslationResponse
 import re
-##//TODO change app before deploying 
+##//TODO remove app before deploying 
 # from app.utils.sanitize_html import sanitize_html
 # from app.utils.ollama_services import ollama_service
 # from app.utils.sanitize_text import sanitize_text
 # from app.utils.create_prompt_translation import create_prompt_translation
 # from app.schemas.translation import TranslationRequest, TranslationResponse
 
-# import json
 
 class TranslationService:
     """Service class for handling translation business logic"""

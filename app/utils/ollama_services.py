@@ -483,21 +483,30 @@ Translate the following HTML content into Spanish.
         except Exception as e:
             raise Exception(f"Translation service error: {str(e)}")
 
-    async def resume_article(self, request: str, model: str) -> str:
+    async def resume_article(self, request: str, model: str, language: str) -> str:
         """
         Generate a resume for the given article text.
         """
         resume = ""
         try:
-                # OLD PROMPT - PRESERVED FOR REFERENCE
-                print(f"DEBUG: Original article text: {request}")
-                prompt = f"""You are a summarization AI. Your task is to summarize the provided blog article. The summary should be concise and suitable for a card-style display in an articles list. The summary must be in the same language as the original text. Do not add any additional comments, recommendations, or extraneous information. The output should be only the summarized text, formatted as a description.
-            - Use a neutral, formal, and clear style — suitable for an article description. Avoid slang or regional idioms.
-            - Do not explain, do not say "Here is your translation".
-            - Maximum 4 paragraphs on a size around 30 to 40 words
+            if language == "en":
+                    print(f"DEBUG: Original article text: {request}")
+                    prompt = f"""You are a summarization AI. Your task is to summarize the provided blog article. The summary should be concise and suitable for a card-style display in an articles list. The summary must be in the same language as the original text. Do not add any additional comments, recommendations, or extraneous information. The output should be only the summarized text, formatted as a description.
+                - Use a neutral, formal, and clear style — suitable for an article description. Avoid slang or regional idioms.
+                - Do not explain, do not say "Here is your translation".
+                - Maximum 4 paragraphs on a size around 30 to 40 words
+                {request}"""
+                    resume = await self.generate_translation(prompt, model)
+                    print(f"DEBUG: Generated resume english: {resume}")
+            else:
+                   print(f"DEBUG: Original article text (ES): {request}")
+                   prompt = f"""Eres una IA de resumir. Tu tarea es resumir el artículo de blog proporcionado. El resumen debe ser conciso y adecuado para una visualización en forma de tarjeta en una lista de artículos. El resumen debe estar en español. No agregues comentarios, recomendaciones o información adicional. La salida debe ser solo el texto resumido, formateado como una descripción.
+            - Utiliza un estilo neutral, formal y claro, adecuado para una descripción de artículo. Evita el uso de jerga o modismos regionales.
+            - No expliques, no digas "Aquí está tu traducción".
+            - Máximo 4 párrafos de un tamaño de alrededor de 30 a 40 palabras
             {request}"""
-                resume = await self.generate_translation(prompt, model)
-                print(f"DEBUG: Generated resume: {resume}")
+                   resume = await self.generate_translation(prompt, model)
+                   print(f"DEBUG: Generated resume spanish: {resume}")
         except httpx.HTTPStatusError as e:
             raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
         except Exception as e:
