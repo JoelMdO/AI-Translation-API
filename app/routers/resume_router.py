@@ -23,10 +23,14 @@
 # ==============================================================================
 
 from fastapi import APIRouter, HTTPException, status, Depends
-from app.schemas.translation import ResumeRequest, ResumeResponse
-from app.services.resume import resume_service
-from app.utils.auth import verify_user_access
-from app.schemas.testUser import GoogleUser
+# from app.schemas.translation import ResumeRequest, ResumeResponse
+# from app.services.resume import resume_service
+# from app.utils.auth import verify_user_access
+# from app.schemas.testUser import GoogleUser
+from schemas.translation import ResumeRequest, ResumeResponse
+from services.resume import resume_service
+from utils.auth import verify_user_access
+from schemas.testUser import GoogleUser
 
 router = APIRouter()
 

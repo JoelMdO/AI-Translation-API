@@ -4,11 +4,16 @@ Coordinates between authentication, text processing, and Ollama communication
 """
 # import re
 ##//TODO change by adding app before deploying 
-from app.utils.sanitize_html import sanitize_html
-from app.utils.ollama_services import ollama_service
-from app.utils.sanitize_text import sanitize_text
-from app.schemas.translation import ResumeRequest, ResumeResponse
-from app.config import OLLAMA_DEFAULT_MODEL
+# from app.utils.sanitize_html import sanitize_html
+# from app.utils.ollama_services import ollama_service
+# from app.utils.sanitize_text import sanitize_text
+# from app.schemas.translation import ResumeRequest, ResumeResponse
+# from app.config import OLLAMA_DEFAULT_MODEL
+from utils.sanitize_html import sanitize_html
+from utils.ollama_services import ollama_service
+from utils.sanitize_text import sanitize_text
+from schemas.translation import ResumeRequest, ResumeResponse
+from config import OLLAMA_DEFAULT_MODEL
 
 class ResumeService:
     """Service class for handling summarization business logic"""
