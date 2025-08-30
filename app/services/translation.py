@@ -2,12 +2,17 @@
 Translation service for handling business logic
 Coordinates between authentication, text processing, and Ollama communication
 """
-from utils.generate_translation import ollama_service
-from utils.sanitize_text import sanitize_text
-from utils.create_prompt_translation import create_prompt_translation
-from schemas.translation import TranslationRequest, TranslationResponse
+# from utils.generate_translation import ollama_service
+# from utils.sanitize_text import sanitize_text
+# from utils.create_prompt_translation import create_prompt_translation
+# from schemas.translation import TranslationRequest, TranslationResponse
 import re
-
+##//TODO change app before deploying 
+from app.utils.sanitize_html import sanitize_html
+from app.utils.ollama_services import ollama_service
+from app.utils.sanitize_text import sanitize_text
+from app.utils.create_prompt_translation import create_prompt_translation
+from app.schemas.translation import TranslationRequest, TranslationResponse
 
 # import json
 
@@ -21,18 +26,18 @@ class TranslationService:
         """
         try:
             # import json
-            def sanitize_html(html: str) -> str:
-                # Remove <script> and other dangerous tags, but keep safe HTML structure
-                # Simple regex-based removal for <script> and event handlers
-                html = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', html, flags=re.DOTALL|re.IGNORECASE)
-                # Remove on* event handlers (e.g., onclick, onerror)
-                html = re.sub(r'on\w+\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
-                html = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', html, flags=re.IGNORECASE)
-                html = re.sub(r'on\w+\s*=\s*[^ >]+', '', html, flags=re.IGNORECASE)
-                # Remove javascript: in href/src
-                html = re.sub(r'(href|src)\s*=\s*"javascript:[^"]*"', '', html, flags=re.IGNORECASE)
-                html = re.sub(r'(href|src)\s*=\s*\'javascript:[^\']*\'', '', html, flags=re.IGNORECASE)
-                return html
+            # def sanitize_html(html: str) -> str:
+            #     # Remove <script> and other dangerous tags, but keep safe HTML structure
+            #     # Simple regex-based removal for <script> and event handlers
+            #     html = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', html, flags=re.DOTALL|re.IGNORECASE)
+            #     # Remove on* event handlers (e.g., onclick, onerror)
+            #     html = re.sub(r'on\w+\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
+            #     html = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', html, flags=re.IGNORECASE)
+            #     html = re.sub(r'on\w+\s*=\s*[^ >]+', '', html, flags=re.IGNORECASE)
+            #     # Remove javascript: in href/src
+            #     html = re.sub(r'(href|src)\s*=\s*"javascript:[^"]*"', '', html, flags=re.IGNORECASE)
+            #     html = re.sub(r'(href|src)\s*=\s*\'javascript:[^\']*\'', '', html, flags=re.IGNORECASE)
+            #     return html
 
             has_html = any('<' in text and '>' in text for text in [request.title, request.body, request.section])
             if has_html:
@@ -63,11 +68,13 @@ class TranslationService:
                     section=sanitized_section,
                     target_language=sanitized_target_language
                 )
+                print(f"DEBUG: Generated prompt for translation: {prompt}")
                 # Get translation from Ollama (single call)
                 raw_translation = await ollama_service.generate_translation(
                     prompt=prompt,
                     model=request.model
                 )
+                print(f"DEBUG: Raw translation response: {raw_translation}")
                 # Try to parse the response into fields (assuming format: Título: ... Cuerpo: ... Sección: ...)
                 sanitized = sanitize_text(raw_translation)
                 translated_title, translated_body, translated_section = None, None, None
@@ -78,7 +85,8 @@ class TranslationService:
                     translated_title = title_match.group(1).strip() if title_match else ''
                     translated_body = body_match.group(1).strip() if body_match else ''
                     translated_section = section_match.group(1).strip() if section_match else ''
-                except Exception:
+                except Exception as e:
+                    print(f"DEBUG: Parsing failed with error: {e}")
                     translated_title = sanitized
                     translated_body = ''
                     translated_section = ''

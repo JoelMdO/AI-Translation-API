@@ -20,6 +20,9 @@ class TranslationResponse(BaseModel):
     success: bool = Field(..., description="Whether translation was successful")
     model_used: str = Field(..., description="Model used for translation")
 
+    class Config:
+        protected_namespaces = ()
+
 
 class HealthResponse(BaseModel):
     """Response schema for health check endpoint"""
@@ -32,3 +35,13 @@ class TokenRequest(BaseModel):
     """Request schema for token generation (if needed)"""
     username: str = Field(..., description="Username")
     password: str = Field(..., description="Password")
+
+class ResumeRequest(BaseModel):
+    """Request schema for resume generation"""
+    article: str = Field(..., description="Article text for resume")
+    esArticle: str = Field(..., description="Spanish article text for resume")
+
+class ResumeResponse(BaseModel):
+    """Response schema for resume generation"""
+    article: str = Field(..., description="Resume of the Article text")
+    esArticle: str = Field(..., description="Resume of the Spanish article text")

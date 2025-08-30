@@ -6,8 +6,12 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
 from dotenv import load_dotenv
-from schemas.testUser import GoogleUser
-from config import GOOGLE_CLIENT_ID
+# from schemas.testUser import GoogleUser
+# from config import GOOGLE_CLIENT_ID, DEV_MODE
+
+##//TODO change app before deploying 
+from app.schemas.testUser import GoogleUser
+from app.config import GOOGLE_CLIENT_ID, DEV_MODE
 
 load_dotenv()
 
@@ -21,14 +25,14 @@ async def verify_google_access_token(credentials: HTTPAuthorizationCredentials =
     Verify Google Access Token from Authorization header
     Validates Google OAuth access tokens from NextAuth.js sessions
     """
-    # if DEV_MODE:
-    #     # Bypass token validation in development mode
-    #     return GoogleUser(
-    #         user_id="dev_user",
-    #         email="dev@localhost",
-    #         name="Developer",
-    #         verified=True
-    #     )
+    if DEV_MODE:
+        # Bypass token validation in development mode
+        return GoogleUser(
+            user_id="dev_user",
+            email="dev@localhost",
+            name="Developer",
+            verified=True
+        )
     try:
         # Extract token from Bearer format
         token = credentials.credentials
