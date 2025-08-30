@@ -8,8 +8,8 @@ from typing import List, Tuple, Match, Optional, Dict, Any
 from bs4 import BeautifulSoup, NavigableString, Tag
 # from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
-##//TODO change app before deploying 
-from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+##//TODO remove app before deploying 
+from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
 class OllamaService:
     """Service class for interacting with Ollama"""
@@ -484,6 +484,27 @@ Translate the following HTML content into Spanish.
         except Exception as e:
             raise Exception(f"Translation service error: {str(e)}")
 
+    async def resume_article(self, request: str, model: str) -> str:
+        """
+        Generate a resume for the given article text.
+        """
+        resume = ""
+        try:
+                # OLD PROMPT - PRESERVED FOR REFERENCE
+                print(f"DEBUG: Original article text: {request}")
+                prompt = f"""You are a summarization AI. Your task is to summarize the provided blog article. The summary should be concise and suitable for a card-style display in an articles list. The summary must be in the same language as the original text. Do not add any additional comments, recommendations, or extraneous information. The output should be only the summarized text, formatted as a description.
+            - Use a neutral, formal, and clear style — suitable for an article description. Avoid slang or regional idioms.
+            - Do not explain, do not say "Here is your translation".
+            - Maximum 4 paragraphs on a size around 30 to 40 words
+            {request}"""
+                resume = await self.generate_translation(prompt, model)
+                print(f"DEBUG: Generated resume: {resume}")
+        except httpx.HTTPStatusError as e:
+            raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
+        except Exception as e:
+            # Optionally log the error here
+            print(f"DEBUG: Error occurred while generating resume: {str(e)}")
+        return resume
 
 # Global service instance
 ollama_service = OllamaService()

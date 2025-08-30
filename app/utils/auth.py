@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 # from config import GOOGLE_CLIENT_ID, DEV_MODE
 
 ##//TODO change app before deploying 
-from schemas.testUser import GoogleUser
-from config import GOOGLE_CLIENT_ID, DEV_MODE
+from app.schemas.testUser import GoogleUser
+from app.config import GOOGLE_CLIENT_ID, DEV_MODE
 
 load_dotenv()
 

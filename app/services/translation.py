@@ -8,10 +8,11 @@ Coordinates between authentication, text processing, and Ollama communication
 # from schemas.translation import TranslationRequest, TranslationResponse
 import re
 ##//TODO change app before deploying 
-from utils.generate_translation import ollama_service
-from utils.sanitize_text import sanitize_text
-from utils.create_prompt_translation import create_prompt_translation
-from schemas.translation import TranslationRequest, TranslationResponse
+from app.utils.sanitize_html import sanitize_html
+from app.utils.ollama_services import ollama_service
+from app.utils.sanitize_text import sanitize_text
+from app.utils.create_prompt_translation import create_prompt_translation
+from app.schemas.translation import TranslationRequest, TranslationResponse
 
 # import json
 
@@ -25,18 +26,18 @@ class TranslationService:
         """
         try:
             # import json
-            def sanitize_html(html: str) -> str:
-                # Remove <script> and other dangerous tags, but keep safe HTML structure
-                # Simple regex-based removal for <script> and event handlers
-                html = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', html, flags=re.DOTALL|re.IGNORECASE)
-                # Remove on* event handlers (e.g., onclick, onerror)
-                html = re.sub(r'on\w+\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
-                html = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', html, flags=re.IGNORECASE)
-                html = re.sub(r'on\w+\s*=\s*[^ >]+', '', html, flags=re.IGNORECASE)
-                # Remove javascript: in href/src
-                html = re.sub(r'(href|src)\s*=\s*"javascript:[^"]*"', '', html, flags=re.IGNORECASE)
-                html = re.sub(r'(href|src)\s*=\s*\'javascript:[^\']*\'', '', html, flags=re.IGNORECASE)
-                return html
+            # def sanitize_html(html: str) -> str:
+            #     # Remove <script> and other dangerous tags, but keep safe HTML structure
+            #     # Simple regex-based removal for <script> and event handlers
+            #     html = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', html, flags=re.DOTALL|re.IGNORECASE)
+            #     # Remove on* event handlers (e.g., onclick, onerror)
+            #     html = re.sub(r'on\w+\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
+            #     html = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', html, flags=re.IGNORECASE)
+            #     html = re.sub(r'on\w+\s*=\s*[^ >]+', '', html, flags=re.IGNORECASE)
+            #     # Remove javascript: in href/src
+            #     html = re.sub(r'(href|src)\s*=\s*"javascript:[^"]*"', '', html, flags=re.IGNORECASE)
+            #     html = re.sub(r'(href|src)\s*=\s*\'javascript:[^\']*\'', '', html, flags=re.IGNORECASE)
+            #     return html
 
             has_html = any('<' in text and '>' in text for text in [request.title, request.body, request.section])
             if has_html:
