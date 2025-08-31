@@ -6,9 +6,9 @@ import httpx
 import re
 from typing import List, Tuple, Match, Optional, Dict, Any
 from bs4 import BeautifulSoup, NavigableString, Tag
-from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+# from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 ##//TODO remove app before deploying 
-# from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
 class OllamaService:
     """Service class for interacting with Ollama"""
