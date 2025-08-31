@@ -2,18 +2,18 @@
 Translation service for handling business logic
 Coordinates between authentication, text processing, and Ollama communication
 """
-from utils.sanitize_html import sanitize_html
-from utils.sanitize_text import sanitize_text
-from utils.ollama_services import ollama_service
-from utils.create_prompt_translation import create_prompt_translation
-from schemas.translation import TranslationRequest, TranslationResponse
+# from utils.sanitize_html import sanitize_html
+# from utils.sanitize_text import sanitize_text
+# from utils.ollama_services import ollama_service
+# from utils.create_prompt_translation import create_prompt_translation
+# from schemas.translation import TranslationRequest, TranslationResponse
 import re
 ##//TODO remove app before deploying 
-# from app.utils.sanitize_html import sanitize_html
-# from app.utils.ollama_services import ollama_service
-# from app.utils.sanitize_text import sanitize_text
-# from app.utils.create_prompt_translation import create_prompt_translation
-# from app.schemas.translation import TranslationRequest, TranslationResponse
+from app.utils.sanitize_html import sanitize_html
+from app.utils.ollama_services import ollama_service
+from app.utils.sanitize_text import sanitize_text
+from app.utils.create_prompt_translation import create_prompt_translation
+from app.schemas.translation import TranslationRequest, TranslationResponse
 
 
 class TranslationService:

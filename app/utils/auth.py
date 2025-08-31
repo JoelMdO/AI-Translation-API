@@ -6,11 +6,11 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
 from dotenv import load_dotenv
-from schemas.testUser import GoogleUser
-from config import GOOGLE_CLIENT_ID, DEV_MODE
+# from schemas.testUser import GoogleUser
+# from config import GOOGLE_CLIENT_ID, DEV_MODE
 ##//TODO change app before deploying 
-# from app.schemas.testUser import GoogleUser
-# from app.config import GOOGLE_CLIENT_ID, DEV_MODE
+from app.schemas.testUser import GoogleUser
+from app.config import GOOGLE_CLIENT_ID, DEV_MODE
 
 load_dotenv()
 

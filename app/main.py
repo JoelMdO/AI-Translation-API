@@ -5,15 +5,15 @@ Simple translation API that validates Google tokens and calls Ollama for transla
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from schemas.translation import HealthResponse
-from utils.ollama_services import ollama_service
-from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
-from routers import ask_router, resume_router
+# from schemas.translation import HealthResponse
+# from utils.ollama_services import ollama_service
+# from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+# from routers import ask_router, resume_router
 ##//TODO remove the app. before deploying 
-# from app.schemas.translation import HealthResponse
-# from app.utils.ollama_services import ollama_service
-# from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
-# from app.routers import ask_router, resume_router
+from app.schemas.translation import HealthResponse
+from app.utils.ollama_services import ollama_service
+from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+from app.routers import ask_router, resume_router
 
 if( not ALLOWED_ORIGINS):
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file."
