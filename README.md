@@ -1,6 +1,6 @@
-# Ollama Translation API
+# AI Translation API
 
-Production-ready translation API using Ollama and Google Authentication.
+Production-ready using AI to perform translation through Ollama and Google Authentication.
 
 ## Quick Start
 
@@ -17,11 +17,6 @@ Production-ready translation API using Ollama and Google Authentication.
    docker-compose up -d
    ```
 
-3. **Access API**:
-   - HTTPS: `https://joelmdo-lab.dev`
-   - Health: `https://joelmdo-lab.dev/health`
-   - Translate: `POST https://joelmdo-lab.dev/ask/ask`
-
 ## API Usage
 
 ### Authentication
@@ -34,36 +29,9 @@ Requires Google ID token from NextJS Google Sign-In.
 
 Translates text using Ollama.
 
-**Headers:**
+#### POST /api/resume
 
-```
-Authorization: Bearer <google_id_token>
-Content-Type: application/json
-X-Request-Type: translation
-X-Service: cms-translate
-X-Source-DB: db
-```
-
-**Request:**
-
-```json
-{
-  "title": "Article Title",
-  "body": "Text to translate",
-  "section": "content",
-  "target_language": "spanish"
-}
-```
-
-**Response:**
-
-```json
-{
-  "translated_text": "Translated content",
-  "success": true,
-  "model_used": "llama3.2"
-}
-```
+Summarize an article to create a description not longer than 50 words.
 
 #### GET /health
 
