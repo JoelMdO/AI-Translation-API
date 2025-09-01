@@ -75,3 +75,4 @@ htmlcov/
 .pytest_cache/
 /nginx/
 nginx/
+docker-compose.yml
