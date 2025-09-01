@@ -73,3 +73,5 @@ logs/
 htmlcov/
 .coverage
 .pytest_cache/
+/nginx/
+nginx/
