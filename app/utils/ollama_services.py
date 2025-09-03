@@ -491,20 +491,24 @@ Translate the following HTML content into Spanish.
         try:
             if language == "en":
                     print(f"DEBUG: Original article text: {request}")
-                    prompt = f"""You are a summarization AI. Your task is to summarize the provided blog article. The summary should be concise and suitable for a card-style display in an articles list. The summary must be in the same language as the original text. Do not add any additional comments, recommendations, or extraneous information. The output should be only the summarized text, formatted as a description.
-                - Use a neutral, formal, and clear style — suitable for an article description. Avoid slang or regional idioms.
-                - Do not explain, do not say "Here is your translation".
-                - Maximum 4 paragraphs on a size around 30 to 40 words
+                    prompt = f"""You are an AI specialized in creating engaging article descriptions. Given the below blog article, generate a description that provides a clear idea of its content while encouraging readers to explore further. Rules: 
+                    Always write in the same language as the original article. 
+                    Style: neutral, professional, and clear. Avoid slang, exaggeration, or personal commentary.
+                    Purpose: create a teaser that sparks curiosity without fully revealing the article.
+                    Output only the description text (no titles, labels, or explanations). 
+                    Length: A single paragraph of 30 to 40 words.
                 {request}"""
                     resume = await self.generate_translation(prompt, model)
                     print(f"DEBUG: Generated resume english: {resume}")
             else:
                    print(f"DEBUG: Original article text (ES): {request}")
-                   prompt = f"""Eres una IA de resumir. Tu tarea es resumir el artículo de blog proporcionado. El resumen debe ser conciso y adecuado para una visualización en forma de tarjeta en una lista de artículos. El resumen debe estar en español. No agregues comentarios, recomendaciones o información adicional. La salida debe ser solo el texto resumido, formateado como una descripción.
-            - Utiliza un estilo neutral, formal y claro, adecuado para una descripción de artículo. Evita el uso de jerga o modismos regionales.
-            - No expliques, no digas "Aquí está tu traducción".
-            - Máximo 4 párrafos de un tamaño de alrededor de 30 a 40 palabras
-            {request}"""
+                   prompt = f"""Eres una IA especializada en crear descripciones atractivas de artículos. En función del artículo de blog al final de las instruciones, genera una descripción que proporcione una idea clara de su contenido mientras anima a los lectores a explorar más. Reglas:
+                   Siempre escribe en el mismo idioma que el artículo original.
+                   Estilo: neutral, profesional y claro. Evita la jerga, la exageración o los comentarios personales.
+                   Propósito: crear una pequeña introducción que despierte la curiosidad sin revelar completamente el artículo.
+                   Salida: solo el texto de la descripción (sin títulos, etiquetas ni explicaciones).
+                   Longitud: un solo párrafo de 30 a 40 palabras.
+               {request}"""
                    resume = await self.generate_translation(prompt, model)
                    print(f"DEBUG: Generated resume spanish: {resume}")
         except httpx.HTTPStatusError as e:
