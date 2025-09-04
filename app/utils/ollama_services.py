@@ -4,7 +4,8 @@ Manages all interactions with the Ollama translation service with HTML preservat
 """
 import httpx
 import re
-from typing import List, Tuple, Match, Optional, Dict, Any
+import json
+from typing import List, Tuple, Match, Dict, Any
 from bs4 import BeautifulSoup, NavigableString, Tag
 # from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 ##//TODO remove app before deploying 
@@ -253,13 +254,13 @@ class OllamaService:
                     text_segments.append(end_text)
                     placeholder_template = placeholder_template[:last_tag_match.end()] + placeholder
         
-        print(f"DEBUG: OLD METHOD - Extracted text segments: {text_segments}")
-        print(f"DEBUG: OLD METHOD - Placeholder template: {placeholder_template}")
+        print(f"DEBUG:  Extracted text segments: {text_segments}")
+        print(f"DEBUG: Placeholder template: {placeholder_template}")
         return text_segments, placeholder_template
 
     def reconstruct_html(self, translated_segments: List[str], template: str) -> str:
         """
-        OLD METHOD: Reconstruct HTML by replacing placeholders with translated text
+        Reconstruct HTML by replacing placeholders with translated text
         This method uses simple string replacement with numbered placeholders
         
         Args:
@@ -277,83 +278,83 @@ class OllamaService:
         print(f"DEBUG: OLD METHOD - Reconstructed HTML: {result}")
         return result
 
-    async def translate_html_content(self, content: str, target_language: str, model: Optional[str] = None) -> str:
-        """
-        Translate HTML content while preserving structure and tags
-        Uses improved text extraction that sends only plain text to Ollama
+#     async def translate_html_content(self, content: str, target_language: str, model: Optional[str] = None) -> str:
+#         """
+#         Translate HTML content while preserving structure and tags
+#         Uses improved text extraction that sends only plain text to Ollama
         
-        Args:
-            content: HTML content to translate
-            target_language: Target language for translation
-            model: Ollama model to use for translation (defaults to OLLAMA_DEFAULT_MODEL)
+#         Args:
+#             content: HTML content to translate
+#             target_language: Target language for translation
+#             model: Ollama model to use for translation (defaults to OLLAMA_DEFAULT_MODEL)
             
-        Returns:
-            Translated HTML content with preserved structure
-        """
-        # Ensure we have a valid model
-        if model is not None:
-            model_to_use: str = model
-        else:
-            model_to_use = OLLAMA_DEFAULT_MODEL or "llama3.2"  # Fallback if env var is not set
+#         Returns:
+#             Translated HTML content with preserved structure
+#         """
+#         # Ensure we have a valid model
+#         if model is not None:
+#             model_to_use: str = model
+#         else:
+#             model_to_use = OLLAMA_DEFAULT_MODEL or "llama3.2"  # Fallback if env var is not set
         
-        # Try new structured approach first
-        try:
-            print(f"DEBUG: Starting HTML translation with improved structure preservation")
+#         # Try new structured approach first
+#         try:
+#             print(f"DEBUG: Starting HTML translation with improved structure preservation")
             
-            # Extract text segments and structure
-            text_segments, structure_map = self.extract_text_with_structure(content)
+#             # Extract text segments and structure
+#             text_segments, structure_map = self.extract_text_with_structure(content)
             
-            if not text_segments:
-                print(f"DEBUG: No text segments found, returning original content")
-                return content  # No text to translate
+#             if not text_segments:
+#                 print(f"DEBUG: No text segments found, returning original content")
+#                 return content  # No text to translate
             
-            # Create clean text for translation (only the extractable text)
-            clean_text_for_translation = "\n".join([f"{i+1}. {text}" for i, text in enumerate(text_segments)])
+#             # Create clean text for translation (only the extractable text)
+#             clean_text_for_translation = "\n".join([f"{i+1}. {text}" for i, text in enumerate(text_segments)])
             
-            print(f"DEBUG: Clean text for translation:\n{clean_text_for_translation}")
+#             print(f"DEBUG: Clean text for translation:\n{clean_text_for_translation}")
             
-            # Create prompt for translation with numbered segments
-            prompt = f"""Translate the following numbered text segments to {target_language}.
+#             # Create prompt for translation with numbered segments
+#             prompt = f"""Translate the following numbered text segments to {target_language}.
 
-IMPORTANT RULES:
-- Translate ONLY the text content after each number
-- Keep the same numbering (1., 2., 3., etc.)
-- Do not add explanations or extra text
-- Maintain the exact same structure
-- Use neutral, formal, and clear {target_language} style
-- Return only the translated numbered list
+# IMPORTANT RULES:
+# - Translate ONLY the text content after each number
+# - Keep the same numbering (1., 2., 3., etc.)
+# - Do not add explanations or extra text
+# - Maintain the exact same structure
+# - Use neutral, formal, and clear {target_language} style
+# - Return only the translated numbered list
 
-TEXT TO TRANSLATE:
-{clean_text_for_translation}"""
+# TEXT TO TRANSLATE:
+# {clean_text_for_translation}"""
 
-            print(f"DEBUG: Generated prompt for structured translation")
+#             print(f"DEBUG: Generated prompt for structured translation")
             
-            # Get translation
-            translated_response = await self.generate_translation(prompt, model_to_use)
-            print(f"DEBUG: Raw translation response: {translated_response}")
+#             # Get translation
+#             translated_response = await self.generate_translation(prompt, model_to_use)
+#             print(f"DEBUG: Raw translation response: {translated_response}")
             
-            # Parse numbered response back to list
-            translated_segments = self._parse_numbered_translation(translated_response, len(text_segments))
+#             # Parse numbered response back to list
+#             translated_segments = self._parse_numbered_translation(translated_response, len(text_segments))
             
-            if len(translated_segments) != len(text_segments):
-                print(f"DEBUG: Segment count mismatch. Expected {len(text_segments)}, got {len(translated_segments)}. Falling back to individual translation.")
-                # Fallback: translate each segment individually
-                translated_segments_fallback: List[str] = []
-                for segment in text_segments:
-                    individual_prompt = f"Translate this text to {target_language} (return only the translation): {segment}"
-                    translated_segment = await self.generate_translation(individual_prompt, model_to_use)
-                    translated_segments_fallback.append(translated_segment.strip())
-                translated_segments = translated_segments_fallback
+#             if len(translated_segments) != len(text_segments):
+#                 print(f"DEBUG: Segment count mismatch. Expected {len(text_segments)}, got {len(translated_segments)}. Falling back to individual translation.")
+#                 # Fallback: translate each segment individually
+#                 translated_segments_fallback: List[str] = []
+#                 for segment in text_segments:
+#                     individual_prompt = f"Translate this text to {target_language} (return only the translation): {segment}"
+#                     translated_segment = await self.generate_translation(individual_prompt, model_to_use)
+#                     translated_segments_fallback.append(translated_segment.strip())
+#                 translated_segments = translated_segments_fallback
             
-            # Reconstruct HTML with translated text using structure
-            result = self.reconstruct_html_from_structure(translated_segments, structure_map)
-            print(f"DEBUG: Final translated HTML result: {result}")
-            return result
+#             # Reconstruct HTML with translated text using structure
+#             result = self.reconstruct_html_from_structure(translated_segments, structure_map)
+#             print(f"DEBUG: Final translated HTML result: {result}")
+#             return result
             
-        except Exception as e:
-            print(f"DEBUG: Error in new structured translation: {e}. Falling back to old method.")
-            # Fallback to old method if new approach fails
-            return await self._translate_html_content_old_method(content, target_language, model_to_use)
+#         except Exception as e:
+#             print(f"DEBUG: Error in new structured translation: {e}. Falling back to old method.")
+#             # Fallback to old method if new approach fails
+#             return await self._translate_html_content_old_method(content, target_language, model_to_use)
 
     def _parse_numbered_translation(self, translation_response: str, expected_count: int) -> List[str]:
         """
@@ -380,63 +381,63 @@ TEXT TO TRANSLATE:
         return segments[:expected_count]  # Trim if too many
 
     # OLD METHOD - PRESERVED FOR FALLBACK
-    async def _translate_html_content_old_method(self, content: str, target_language: str, model: str) -> str:
-        """
-        OLD METHOD: Translate HTML content while preserving structure and tags
-        This method uses the original segment-based approach with ---SEGMENT--- separators
-        """
-        # Extract text segments and create template
-        text_segments, placeholder_template = self.extract_text_from_html(content)
+#     async def _translate_html_content_old_method(self, content: str, target_language: str, model: str) -> str:
+#         """
+#         OLD METHOD: Translate HTML content while preserving structure and tags
+#         This method uses the original segment-based approach with ---SEGMENT--- separators
+#         """
+#         # Extract text segments and create template
+#         text_segments, placeholder_template = self.extract_text_from_html(content)
         
-        if not text_segments:
-            return content  # No text to translate
+#         if not text_segments:
+#             return content  # No text to translate
         
-        # Create prompt for batch translation
-        text_to_translate = "---SEGMENT---".join(text_segments)
-        print(f"DEBUG: OLD METHOD - text for translation: {text_to_translate}")
+#         # Create prompt for batch translation
+#         text_to_translate = "---SEGMENT---".join(text_segments)
+#         print(f"DEBUG: OLD METHOD - text for translation: {text_to_translate}")
         
-        # OLD PROMPT - PRESERVED FOR REFERENCE
-        prompt = f"""Translate the following text segments to {target_language}. 
-Translate the following HTML content into Spanish.
+#         # OLD PROMPT - PRESERVED FOR REFERENCE
+#         prompt = f"""Translate the following text segments to {target_language}. 
+# Translate the following HTML content into Spanish.
 
-- Use only one translation, no alternatives or explanations.
-- Preserve the HTML structure and tags exactly as they are.
-- Translate literally the visible text between the tags.
-- Use a neutral, formal, and clear Spanish style — suitable for an educational or explanatory talk. Avoid slang or regional idioms.
-- Return only the translated HTML. Do not wrap it in extra markdown, do not explain, do not say "Here is your translation".
-{text_to_translate}"""
+# - Use only one translation, no alternatives or explanations.
+# - Preserve the HTML structure and tags exactly as they are.
+# - Translate literally the visible text between the tags.
+# - Use a neutral, formal, and clear Spanish style — suitable for an educational or explanatory talk. Avoid slang or regional idioms.
+# - Return only the translated HTML. Do not wrap it in extra markdown, do not explain, do not say "Here is your translation".
+# {text_to_translate}"""
         
-        # COMMENTED OLD PROMPT IDEAS - PRESERVED FOR FUTURE REFERENCE
-        # print(f"DEBUG: Generated prompt for translation: {prompt}")
-        # TODO possible new prompt
-        # Instructions:
-        # - Translate only the text content, not HTML tags or image information
-        # - Maintain the exact structure and hierarchy
-        # - Preserve all formatting indicators and attributes
-        # - For images, translate only the 'alt' and 'title' text if present
-        # - Return the result in the exact same JSON structure
-        # Get translation
-        translated_combined = await self.generate_translation(prompt, model)
+#         # COMMENTED OLD PROMPT IDEAS - PRESERVED FOR FUTURE REFERENCE
+#         # print(f"DEBUG: Generated prompt for translation: {prompt}")
+#         # TODO possible new prompt
+#         # Instructions:
+#         # - Translate only the text content, not HTML tags or image information
+#         # - Maintain the exact structure and hierarchy
+#         # - Preserve all formatting indicators and attributes
+#         # - For images, translate only the 'alt' and 'title' text if present
+#         # - Return the result in the exact same JSON structure
+#         # Get translation
+#         translated_combined = await self.generate_translation(prompt, model)
         
-        # OLD DEBUG - PRESERVED FOR REFERENCE
-        # print(f"DEBUG: Raw translation response: {translated_combined}")
+#         # OLD DEBUG - PRESERVED FOR REFERENCE
+#         # print(f"DEBUG: Raw translation response: {translated_combined}")
         
-        # Split back into segments
-        translated_segments = translated_combined.split("---SEGMENT---")
-        translated_segments = [seg.strip() for seg in translated_segments]
+#         # Split back into segments
+#         translated_segments = translated_combined.split("---SEGMENT---")
+#         translated_segments = [seg.strip() for seg in translated_segments]
         
-        # Ensure we have the same number of segments
-        if len(translated_segments) != len(text_segments):
-            # Fallback: translate each segment individually
-            translated_segments: List[str] = []
-            for segment in text_segments:
-                individual_prompt = f"Translate this text to {target_language}: {segment}"
-                translated_segment = await self.generate_translation(individual_prompt, model)
-                translated_segments.append(translated_segment.strip())
+#         # Ensure we have the same number of segments
+#         if len(translated_segments) != len(text_segments):
+#             # Fallback: translate each segment individually
+#             translated_segments: List[str] = []
+#             for segment in text_segments:
+#                 individual_prompt = f"Translate this text to {target_language}: {segment}"
+#                 translated_segment = await self.generate_translation(individual_prompt, model)
+#                 translated_segments.append(translated_segment.strip())
         
-        # Reconstruct HTML with translated text
-        print(f"DEBUG: OLD METHOD - HTML with translated content: {self.reconstruct_html(translated_segments, placeholder_template)}")
-        return self.reconstruct_html(translated_segments, placeholder_template)
+#         # Reconstruct HTML with translated text
+#         print(f"DEBUG: OLD METHOD - HTML with translated content: {self.reconstruct_html(translated_segments, placeholder_template)}")
+#         return self.reconstruct_html(translated_segments, placeholder_template)
 
     async def generate_translation(self, prompt: str, model: str) -> str:
         """
@@ -452,7 +453,21 @@ Translate the following HTML content into Spanish.
         Raises:
             Exception: If translation fails
         """
+        print("\n" + "="*50)
+        print("STARTING TRANSLATION REQUEST")
+        print("="*50)
+        
         try:
+            # Print initial debug info
+            print(f"\nConfiguration:")
+            print(f"Base URL: {self.base_url}")
+            print(f"Model: {OLLAMA_DEFAULT_MODEL}")
+            print(f"Timeout: {self.timeout}")
+            
+            print("\nPrompt:")
+            print("-"*50)
+            print(prompt)
+            print("-"*50)
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 payload: object = {}
                 print(f"DEBUG: PROMPT: {prompt}")
@@ -462,26 +477,79 @@ Translate the following HTML content into Spanish.
                     "stream": False,
                     "temperature": 0.3  # Lower temperature for consistent translations
                 }
-                
+                print("\nRequest payload:")
+                print(payload)
+                    
+                    # Make the request
+                print("\nSending request to Ollama API...")
+            
                 response = await client.post(
                     f"{self.base_url}/api/generate",
                     json=payload
                 ) 
                 # //TODO change app before deploying
                 # response = await client.post("http://localhost:11434/api/generate", json=payload)
-
+                # Log response details
+                print("\nResponse details:")
+                print(f"Status code: {response.status_code}")
+                print("\nHeaders:")
+                for key, value in response.headers.items():
+                    print(f"{key}: {value}")
+                
+                # Get response content
+                print("\nRaw response content:")
+                try:
+                    content = response.content.decode('utf-8')
+                    print(content[:500] + "..." if len(content) > 500 else content)
+                except Exception as e:
+                    print(f"Error decoding content: {e}")
+                    print("Raw content:", response.content)
+                            
                 print(f"DEBUG: Response status code: {response}")
                 response.raise_for_status()
                 print(f"DEBUG: Response status code: {response.status_code}")
                 print(f"DEBUG: Response headers: {response.headers}")
                 print(f"DEBUG: Response content: {response.content}...")
+             # Parse JSON response
+            try:
                 data = response.json()
-                return data.get("response", "").strip()
+                print("\nParsed response data:")
+                print(data)
                 
+                translation = data.get("response", "").strip()
+                if not translation:
+                    print("\nWARNING: Empty translation received!")
+                else:
+                    print("\nTranslation received successfully.")
+                    print("Preview:")
+                    print(translation[:100] + "..." if len(translation) > 100 else translation)
+                
+                return translation
+
+            except json.JSONDecodeError as e:
+                print(f"\nJSON parsing error: {e}")
+                raise Exception(f"Failed to parse response: {e}")
+            except Exception as e:
+                print(f"\nUnexpected error while parsing response: {e}")
+                raise
+                        
+                
+        except httpx.TimeoutException:
+                    print("\nRequest timed out!")
+                    raise Exception("Translation request timed out")
         except httpx.HTTPStatusError as e:
-            raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
+                    print(f"\nHTTP Error {e.response.status_code}")
+                    print(f"Response: {e.response.text}")
+                    raise
+                
         except Exception as e:
-            raise Exception(f"Translation service error: {str(e)}")
+            print(f"\nError in generate_translation: {str(e)}")
+            raise Exception(f"Translation failed: {str(e)}")
+            
+        finally:
+            print("\n" + "="*50)
+            print("END OF TRANSLATION REQUEST")
+            print("="*50)
 
     async def resume_article(self, request: str, model: str, language: str) -> str:
         """
