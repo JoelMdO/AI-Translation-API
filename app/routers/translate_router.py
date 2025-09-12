@@ -41,7 +41,7 @@ router = APIRouter()
 # Route: /user/add
 # Description:  Create a new user
 # ===========================================================================
-@router.post("/ask", response_model=TranslationResponse)
+@router.post("/translate", response_model=TranslationResponse)
 async def translate_text(
     request: TranslationRequest,
     current_user: GoogleUser = Depends(verify_user_access)

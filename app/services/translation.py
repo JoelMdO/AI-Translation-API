@@ -94,7 +94,12 @@ class TranslationService:
                 translated_title = sanitize_text(translated_title)
                 translated_body = sanitize_text(translated_body)
                 translated_section = sanitize_text(translated_section)
-
+            print("==="*40)
+            print(f"DEBUG: BEFORE RETURN TO CRM, Final translated fields")
+            print(f"DEBUG- Title: {translated_title}, ")
+            print(f"DEBUG- Body: {translated_body}, ")
+            print(f"DEBUG- Section: {translated_section}")
+            print("==="*40)
             # Return a real dict for translated_text
             return TranslationResponse(
                 translated_text={

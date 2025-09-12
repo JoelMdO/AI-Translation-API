@@ -276,6 +276,169 @@ class OllamaService:
         
         print(f"DEBUG: OLD METHOD - Reconstructed HTML: {result}")
         return result
+    def split_html_into_chunks(self, html: str, max_chars: int = 2000) :
+        """
+        Split HTML content into smaller chunks for translation.
+        
+        Strategy:
+        1. Primary split by <hr> (semantic boundary).
+        2. If any chunk exceeds `max_chars`, further split by <div> tags.
+        3. If still too large, fall back to character-based splitting at tag boundaries.
+
+        Args:
+            html: Full HTML content to split
+            max_chars: Maximum characters per chunk
+
+        Returns:
+            List of HTML chunks ready for translation
+        """
+        final_chunks: list[str] = []
+
+    # Step 1: split by <hr>
+        parts = html.split("<hr")
+        for i, part in enumerate(parts):
+            if i > 0:
+            # Reattach <hr> to keep original structure
+                part = "<hr" + part
+            part = part.strip()
+            if not part:
+                continue
+
+        # Step 2: enforce max length
+            if len(part) <= max_chars:
+                final_chunks.append(part)
+            else:
+            # Try splitting further by </div>
+                buffer = ""
+                for sub in part.split("</div>"):
+                    if not sub.strip():
+                        continue
+                    candidate = buffer + sub + "</div>"
+                    if len(candidate) > max_chars:
+                        if buffer:
+                            final_chunks.append(buffer)
+                        buffer = sub + "</div>"
+                    else:
+                        buffer = candidate
+                if buffer:
+                    final_chunks.append(buffer)
+
+    # Step 3: safeguard for any chunks still too large
+        safe_final: list[str] = []
+        for chunk in final_chunks:
+            if len(chunk) > max_chars:
+                start = 0
+                while start < len(chunk):
+                    slice_ = chunk[start:start + max_chars]
+
+                # try not to break inside a tag
+                    if slice_.count("<") > slice_.count(">"):
+                        cut = slice_.rfind(">")
+                        if cut != -1:
+                            safe_final.append(slice_[:cut+1])
+                        start += cut + 1
+                        continue
+
+                    safe_final.append(slice_)
+                    start += max_chars
+            else:
+                safe_final.append(chunk)
+
+        return [c.strip() for c in safe_final if c.strip()]
+         # Parse HTML
+        # soup = BeautifulSoup(html, 'html.parser')
+        # chunks: List[str] = []
+        # current_chunk = []
+        # current_length = 0
+        
+        # def process_node(node: Any):
+        #     nonlocal current_chunk, current_length
+            
+        #     if isinstance(node, NavigableString):
+        #         text = str(node).strip()
+        #         if text:
+        #             # If adding this text would exceed chunk size, create new chunk
+        #             if current_length + len(text) > max_chars and current_chunk:
+        #                 chunks.append(''.join(current_chunk)) # type: ignore
+        #                 current_chunk = []
+        #                 current_length = 0
+                    
+        #             current_chunk.append(text) # type: ignore
+        #             current_length += len(text)
+            
+        #     elif isinstance(node, Tag):
+        #         # Start tag
+        #         tag_start = f"<{node.name}{' ' + str(node.attrs) if node.attrs else ''}>"
+        #         current_chunk.append(tag_start) # type: ignore
+                
+        #         # Process children
+        #         for child in node.children:
+        #             process_node(child)
+                
+        #         # End tag
+        #         current_chunk.append(f"</{node.name}>") # type: ignore
+        
+        # # Process the HTML tree
+        # for node in (soup.body.children if soup.body else soup.children):
+        #     process_node(node)
+        
+        # # Don't forget the last chunk       if current_chunk:
+        #     chunks.append(''.join(current_chunk)) # type: ignore
+        
+        # print(f"DEBUG: Split HTML into {len(chunks)} chunks")
+        # return chunks
+        # chunks: list[str] = []
+
+        # # Step 1: split by <hr>
+        # parts = html.split("<hr")
+        # for i, part in enumerate(parts):
+        #     if i > 0:
+        #         # Reattach the <hr> tag at the start of each part (except the first)
+        #         part = "<hr" + part
+        #     part = part.strip()
+        #     if not part:
+        #         continue
+
+        #     # Step 2: enforce max length
+        #     if len(part) <= max_chars:
+        #         chunks.append(part)
+        #     else:
+        #         # Try splitting further by <div>
+        #         subparts = part.split("</div>")
+        #         buffer = ""
+        #         for sp in subparts:
+        #             candidate = buffer + sp + "</div>"
+        #             if len(candidate) > max_chars:
+        #                 if buffer:
+        #                     chunks.append(buffer)
+        #                 buffer = sp + "</div>"
+        #             else:
+        #                 buffer = candidate
+        #         if buffer:
+        #             chunks.append(buffer)
+
+        #         # Step 3: fallback to character slicing if still too big
+        #         safe_chunks: list[str] = []
+        #         for c in chunks:
+        #             if len(c) > max_chars:
+        #                 for j in range(0, len(c), max_chars):
+        #                     slice_ = c[j:j+max_chars]
+        #                     # try not to break in the middle of a tag
+        #                     if slice_.count("<") > slice_.count(">"):
+        #                         # cut back to last closing tag
+        #                         cut = slice_.rfind(">")
+        #                         if cut != -1:
+        #                             safe_chunks.append(slice_[:cut+1])
+        #                             buffer_rest = slice_[cut+1:]
+        #                             if buffer_rest:
+        #                                 safe_chunks.append(buffer_rest)
+        #                     else:
+        #                         safe_chunks.append(slice_)
+        #             else:
+        #                 safe_chunks.append(c)
+        #         chunks = safe_chunks
+
+        # return [c.strip() for c in chunks if c.strip()]
 
     async def translate_html_content(self, content: str, target_language: str, model: Optional[str] = None) -> str:
         """
@@ -295,65 +458,91 @@ class OllamaService:
             model_to_use: str = model
         else:
             model_to_use = OLLAMA_DEFAULT_MODEL or "llama3.2"  # Fallback if env var is not set
-        
         # Try new structured approach first
+        if not content or len(content.strip()) < 5:
+            return content
+    
         try:
             print(f"DEBUG: Starting HTML translation with improved structure preservation")
-            
+            prompt = ""
             # Extract text segments and structure
-            text_segments, structure_map = self.extract_text_with_structure(content)
+            # text_segments, structure_map = self.extract_text_with_structure(content)
             
-            if not text_segments:
-                print(f"DEBUG: No text segments found, returning original content")
-                return content  # No text to translate
-            
-            # Create clean text for translation (only the extractable text)
-            clean_text_for_translation = "\n".join([f"{i+1}. {text}" for i, text in enumerate(text_segments)])
-            
-            print(f"DEBUG: Clean text for translation:\n{clean_text_for_translation}")
-            
+            # if not text_segments:
+            #     print(f"DEBUG: No text segments found, returning original content")
+            #     return content  # No text to translate
+            # # Create clean text for translation (only the extractable text)
+            # clean_text_for_translation = "\n".join([f"{i+1}. {text}" for i, text in enumerate(text_segments)])
+            # print("==="*40)
+            # # print(f"DEBUG: Clean text for translation:\n{clean_text_for_translation}")
+            # print(f"DEBUG: Clean text for translation:\n{clean_text_for_translation}")
+            # print("==="*40)
+            chunks = self.split_html_into_chunks(content, max_chars=5000)
+            translated_chunks: List[str] = []
+            for i, chunk in enumerate(chunks):
+                try:
+                # Extract text and structure from chunk
+                    text_segments = self.extract_text_with_structure(chunk)
+                
+                    if not text_segments:
+                        translated_chunks.append(chunk)
+                        continue
+
             # Create prompt for translation with numbered segments
-            prompt = f"""Translate the following numbered text segments to {target_language}.
+                    prompt = f"""Translate the following numbered text segments to {target_language}.
+                    IMPORTANT RULES:
+                    - Translate ONLY the text content after each number
+                    - Keep the same numbering if any (1., 2., 3., etc.)
+                    - Do not add explanations or extra text, no alternatives or explanations
+                    - Maintain the exact same structure
+                    - Use neutral, formal, and clear {target_language} style
+                    - Return only the translated numbered list
+                    - Preserve the HTML structure and tags exactly as they are.
+                    - Translate literally the visible text between the tags.
+                    - Use a neutral, formal, and clear Spanish style — suitable for an educational or explanatory talk. Avoid slang or regional idioms.
+                    - Return only the translated. Do not wrap it in extra markdown, do not explain, do not say "Here is your translation".
+                    - Do not return any context array numbers.
+                    TEXT TO TRANSLATE:
+                    {chunk}"""
 
-IMPORTANT RULES:
-- Translate ONLY the text content after each number
-- Keep the same numbering if any (1., 2., 3., etc.)
-- Do not add explanations or extra text, no alternatives or explanations
-- Maintain the exact same structure
-- Use neutral, formal, and clear {target_language} style
-- Return only the translated numbered list
-- Preserve the HTML structure and tags exactly as they are.
-- Translate literally the visible text between the tags.
-- Use a neutral, formal, and clear Spanish style — suitable for an educational or explanatory talk. Avoid slang or regional idioms.
-- Return only the translated. Do not wrap it in extra markdown, do not explain, do not say "Here is your translation".
-- Do not return any context array numbers.
-- Return the translation in this exact format:
-
-TEXT TO TRANSLATE:
-{clean_text_for_translation}"""
-
-            print(f"DEBUG: Generated prompt for structured translation")
-            
-            # Get translation
-            translated_response = await self.generate_translation(prompt, model_to_use)
-            print(f"DEBUG: Raw translation response: {translated_response}")
-            
+                    print(f"DEBUG: Generated prompt for structured translation")
+                
+                # Get translation
+                    translated_response = await self.generate_translation(prompt, model_to_use)
+                    print("==="*40)
+                    print(f"DEBUG: Raw translation response: {translated_response}")
+                    print("==="*40)
             # Parse numbered response back to list
-            translated_segments = self._parse_numbered_translation(translated_response, len(text_segments))
+            # translated_segments = self._parse_numbered_translation(translated_response, len(text_segments))
+                # Validate translation
+                    if not translated_response or len(translated_response.strip()) < 5:
+                        print(f"WARNING: Empty or invalid translation for chunk {i+1}")
+                        translated_chunks.append(chunk)  # Keep original if translation failed
+                        continue
+                    
+                    translated_chunks.append(translated_response.strip())
+                    
+                except Exception as chunk_error:
+                    print(f"ERROR: Failed to translate chunk {i+1}: {str(chunk_error)}")
+                    translated_chunks.append(chunk)  # Keep original on error
+                    continue
+            # if len(translated_segments) != len(text_segments):
+            #     # print(f"DEBUG: Segment count mismatch. Expected {len(text_segments)}, got {len(translated_segments)}. Falling back to individual translation.")
+            #     # Fallback: translate each segment individually
+            #     translated_segments_fallback: List[str] = []
+            #     for segment in text_segments:
+            #         individual_prompt = f"Translate this text to {target_language} (return only the translation): {segment}"
+            #         translated_segment = await self.generate_translation(individual_prompt, model_to_use)
+            #         translated_segments_fallback.append(translated_segment.strip())
+            #     translated_segments = translated_segments_fallback
             
-            if len(translated_segments) != len(text_segments):
-                print(f"DEBUG: Segment count mismatch. Expected {len(text_segments)}, got {len(translated_segments)}. Falling back to individual translation.")
-                # Fallback: translate each segment individually
-                translated_segments_fallback: List[str] = []
-                for segment in text_segments:
-                    individual_prompt = f"Translate this text to {target_language} (return only the translation): {segment}"
-                    translated_segment = await self.generate_translation(individual_prompt, model_to_use)
-                    translated_segments_fallback.append(translated_segment.strip())
-                translated_segments = translated_segments_fallback
-            
-            # Reconstruct HTML with translated text using structure
-            result = self.reconstruct_html_from_structure(translated_segments, structure_map)
+            # # Reconstruct HTML with translated text using structure
+            # result = self.reconstruct_html_from_structure(translated_segments, structure_map)
+                # translated_chunks.append(translated_response)
+            result = "\n".join(translated_chunks)
+            print("==="*40)
             print(f"DEBUG: Final translated HTML result: {result}")
+            print("==="*40)
             return result
             
         except Exception as e:
@@ -461,7 +650,7 @@ Translate the following HTML content into Spanish.
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 payload: object = {}
-                print(f"DEBUG: PROMPT: {prompt}")
+                # print(f"DEBUG: PROMPT: {prompt}")
                 payload = {
                     "model": OLLAMA_DEFAULT_MODEL,
                     "prompt": prompt,
@@ -476,11 +665,11 @@ Translate the following HTML content into Spanish.
                 # //TODO change app before deploying
                 # response = await client.post("http://localhost:11434/api/generate", json=payload)
 
-                print(f"DEBUG: Response status code: {response}")
+                # print(f"DEBUG: Response status code: {response}")
                 response.raise_for_status()
-                print(f"DEBUG: Response status code: {response.status_code}")
-                print(f"DEBUG: Response headers: {response.headers}")
-                print(f"DEBUG: Response content: {response.content}...")
+                # print(f"DEBUG: Response status code: {response.status_code}")
+                # print(f"DEBUG: Response headers: {response.headers}")
+                # print(f"DEBUG: Response content: {response.content}...")
                 data = response.json()
                 return data.get("response", "").strip()
                 
@@ -489,32 +678,32 @@ Translate the following HTML content into Spanish.
         except Exception as e:
             raise Exception(f"Translation service error: {str(e)}")
 
-    async def resume_article(self, request: str, model: str, language: str) -> str:
+    async def resume_article(self, title: str, body: str, model: str, language: str) -> str:
         """
         Generate a resume for the given article text.
         """
         resume = ""
         try:
             if language == "en":
-                    print(f"DEBUG: Original article text: {request}")
-                    prompt = f"""You are an AI specialized in creating engaging article descriptions. Given the below blog article, generate a description that provides a clear idea of its content while encouraging readers to explore further. Rules: 
+                    print(f"DEBUG: Original article text: {title}")
+                    prompt = f"""You are an AI specialized in creating engaging article descriptions. Given the below blog title and slice of article body, generate a description that provides a clear idea of its content while encouraging readers to explore further. Rules: 
                     Always write in the same language as the original article. 
                     Style: neutral, professional, and clear. Avoid slang, exaggeration, or personal commentary.
                     Purpose: create a teaser that sparks curiosity without fully revealing the article.
                     Output only the description text (no titles, labels, or explanations). 
                     Length: A single paragraph of 30 to 40 words.
-                {request}"""
+                {"Title: " + title if title else "", " Article: " + body if body else ""}"""
                     resume = await self.generate_translation(prompt, model)
                     print(f"DEBUG: Generated resume english: {resume}")
             else:
-                   print(f"DEBUG: Original article text (ES): {request}")
-                   prompt = f"""Eres una IA especializada en crear descripciones atractivas de artículos. En función del artículo de blog al final de las instruciones, genera una descripción que proporcione una idea clara de su contenido mientras anima a los lectores a explorar más. Reglas:
+                   print(f"DEBUG: Original article text (ES): {title}")
+                   prompt = f"""Eres una IA especializada en crear descripciones atractivas de artículos. En función del título y el fragmento del cuerpo del artículo de blog al final de las instrucciones, genera una descripción que proporcione una idea clara de su contenido mientras anima a los lectores a explorar más. Reglas:
                    Siempre escribe en el mismo idioma que el artículo original.
                    Estilo: neutral, profesional y claro. Evita la jerga, la exageración o los comentarios personales.
                    Propósito: crear una pequeña introducción que despierte la curiosidad sin revelar completamente el artículo.
                    Salida: solo el texto de la descripción (sin títulos, etiquetas ni explicaciones).
                    Longitud: un solo párrafo de 30 a 40 palabras.
-               {request}"""
+               {"Titulo: " + title if title else "", " Artículo: " + body if body else ""}"""
                    resume = await self.generate_translation(prompt, model)
                    print(f"DEBUG: Generated resume spanish: {resume}")
         except httpx.HTTPStatusError as e:
