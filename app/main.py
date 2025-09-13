@@ -5,6 +5,9 @@ Simple translation API that validates Google tokens and calls Ollama for transla
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi import Request
 # from schemas.translation import HealthResponse
 # from utils.ollama_services import ollama_service
 # from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
@@ -44,7 +47,16 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
-
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    raw = await request.body()
+    print("=== REQUEST VALIDATION ERROR ===")
+    print("URL:", request.url)
+    print("RAW BODY (first 2000 bytes):", raw[:2000])
+    print("Pydantic errors:", exc.errors())
+    print("================================")
+    # Return the default error structure so client still sees details
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 # Configuración del middleware de CORS
 app.add_middleware(
     CORSMiddleware,

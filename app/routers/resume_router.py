@@ -58,6 +58,7 @@ async def resume_text(
     """
     try:
         # Process summarization through service layer
+        print(f"DEBUG: Resume request: {request}")
         response = await resume_service.summarize(request)
         print(f"DEBUG: Resume successful: {response}")
         return response
