@@ -463,7 +463,7 @@ class OllamaService:
             return content
     
         try:
-            print(f"DEBUG: Starting HTML translation with improved structure preservation")
+            print(f"DEBUG: Starting HTML translation at translate html contentwith improved structure preservation")
             prompt = ""
             # Extract text segments and structure
             # text_segments, structure_map = self.extract_text_with_structure(content)
@@ -489,20 +489,18 @@ class OllamaService:
                         continue
 
             # Create prompt for translation with numbered segments
-                    prompt = f"""Translate the following numbered text segments to {target_language}.
-                    IMPORTANT RULES:
-                    - Translate ONLY the text content after each number
-                    - Keep the same numbering if any (1., 2., 3., etc.)
+                    prompt = f"""You are an AI specialized in translating to {target_language}, accordingly translate the below text by following the next list of rules:
+                    Rules:
                     - Do not add explanations or extra text, no alternatives or explanations
                     - Maintain the exact same structure
                     - Use neutral, formal, and clear {target_language} style
-                    - Return only the translated numbered list
+                    - In case the text is a list, translate ONLY the text content after each number, once done keep the same numbering if any (1., 2., 3., etc.)
                     - Preserve the HTML structure and tags exactly as they are.
                     - Translate literally the visible text between the tags.
-                    - Use a neutral, formal, and clear Spanish style — suitable for an educational or explanatory talk. Avoid slang or regional idioms.
-                    - Return only the translated. Do not wrap it in extra markdown, do not explain, do not say "Here is your translation".
+                    - Use style suitable for an educational or explanatory talk. Avoid slang or regional idioms.
+                    - Return only the translated. Do not wrap it in extra mark  down, do not explain, do not say "Here is your translation".
                     - Do not return any context array numbers.
-                    TEXT TO TRANSLATE:
+                    The text to translate is:
                     {chunk}"""
 
                     print(f"DEBUG: Generated prompt for structured translation")
