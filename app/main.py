@@ -8,15 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.responses import JSONResponse
 # from fastapi.exceptions import RequestValidationError
 # from fastapi import Request
-# from schemas.translation import HealthResponse
-# from utils.ollama_services import ollama_service
-# from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
-# from routers import ask_router, resume_router
+from schemas.translation import HealthResponse
+from utils.ollama_services import ollama_service
+from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+from routers import resume_router, translate_router
 ##//TODO remove the app. before deploying 
-from app.schemas.translation import HealthResponse
-from app.utils.ollama_services import ollama_service
-from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
-from app.routers import resume_router, translate_router
+# from app.schemas.translation import HealthResponse
+# from app.utils.ollama_services import ollama_service
+# from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+# from app.routers import resume_router, translate_router
 
 if( not ALLOWED_ORIGINS):
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file."

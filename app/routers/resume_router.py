@@ -1,7 +1,7 @@
 # ============================================================================== 
 # Author: Joel Montes de Oca Lopez
-# Creation Date: 30/08/2025
-# Last Modified: 30/08/2025
+# Creation Date: 20/10/2025
+# Last Modified: 20/10/2025
 # Contact: https://joelmontesdeoca.dev
 # 
 # Description:
@@ -23,14 +23,14 @@
 # ==============================================================================
 
 from fastapi import APIRouter, HTTPException, status, Depends
-from app.schemas.translation import ResumeRequest, ResumeResponse
-from app.services.resume import resume_service
-from app.utils.auth import verify_user_access
-from app.schemas.testUser import GoogleUser
-# from schemas.translation import ResumeRequest, ResumeResponse
-# from services.resume import resume_service
-# from utils.auth import verify_user_access
-# from schemas.testUser import GoogleUser
+# from app.schemas.translation import ResumeRequest, ResumeResponse
+# from app.services.resume import resume_service
+# from app.utils.auth import verify_user_access
+# from app.schemas.testUser import GoogleUser
+from schemas.translation import ResumeRequest, ResumeResponse
+from services.resume import resume_service
+from utils.auth import verify_user_access
+from schemas.testUser import GoogleUser
 
 router = APIRouter()
 
