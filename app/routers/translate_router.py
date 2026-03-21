@@ -25,10 +25,15 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 # import uvicorn
 # import os
-from app.schemas.translation import TranslationRequest, TranslationResponse
-from app.services.translation import translation_service
-from app.utils.auth import verify_user_access
-from app.schemas.testUser import GoogleUser
+from schemas.translation import TranslationRequest, TranslationResponse
+from services.translation import translation_service
+from utils.auth import verify_user_access
+from schemas.testUser import GoogleUser
+
+# from app.schemas.translation import TranslationRequest, TranslationResponse
+# from app.services.translation import translation_service
+# from app.utils.auth import verify_user_access
+# from app.schemas.testUser import GoogleUser
 
 router = APIRouter()
 
@@ -36,7 +41,7 @@ router = APIRouter()
 # Route: /user/add
 # Description:  Create a new user
 # ===========================================================================
-@router.post("/ask", response_model=TranslationResponse)
+@router.post("/translate", response_model=TranslationResponse)
 async def translate_text(
     request: TranslationRequest,
     current_user: GoogleUser = Depends(verify_user_access)
@@ -57,9 +62,11 @@ async def translate_text(
     try:
         # Process translation through service layer
         response = await translation_service.translate(request)
+        print(f"DEBUG: Translation successful: {response}")
         return response
         
     except Exception as e:
+        print(f"DEBUG: Translation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Translation failed: {str(e)}"

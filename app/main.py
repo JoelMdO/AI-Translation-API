@@ -1,26 +1,28 @@
 """
 Main FastAPI application
-Simple translation API that validates JWT tokens and calls Ollama for translation
+Simple translation API that validates Google tokens and calls Ollama for translation
 """
-from fastapi import FastAPI, Request, HTTPException
-from dotenv import load_dotenv
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
-from typing import Callable, Awaitable
-from fastapi import Response
-from app.schemas.translation import HealthResponse
-from app.utils.generate_translation import ollama_service
-from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS, URL_AUTH, GOOGLE_CLIENT_ID
-# from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS, URL_AUTH, GOOGLE_CLIENT_ID, TESTING_MODE
-from app.routers import ask_router
+# from fastapi.responses import JSONResponse
+# from fastapi.exceptions import RequestValidationError
+# from fastapi import Request
+from schemas.translation import HealthResponse
+from utils.ollama_services import ollama_service
+from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+from routers import resume_router, translate_router
+##//TODO remove the app. before deploying 
+# from app.schemas.translation import HealthResponse
+# from app.utils.ollama_services import ollama_service
+# from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
+# from app.routers import resume_router, translate_router
 
-load_dotenv()
-
-if not ALLOWED_ORIGINS:
-    raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file.")
-
+if( not ALLOWED_ORIGINS):
+    raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file."
+                     )
 @asynccontextmanager
+# async def lifespan(app: FastAPI):
 async def lifespan(app: FastAPI):
     """
     Application lifespan handler
@@ -45,46 +47,30 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
-
+# @app.exception_handler(RequestValidationError)
+# async def validation_exception_handler(request: Request, exc: RequestValidationError):
+#     raw = await request.body()
+#     print("=== REQUEST VALIDATION ERROR ===")
+#     print("URL:", request.url)
+#     print("RAW BODY (first 2000 bytes):", raw[:2000])
+#     print("Pydantic errors:", exc.errors())
+#     print("================================")
+#     # Return the default error structure so client still sees details
+#     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 # Configuración del middleware de CORS
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=[ALLOWED_ORIGINS] if ALLOWED_ORIGINS else ["*"],  ##TODO change on production
     allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,  # Permitir credenciales
-    allow_methods=CORS_METHODS,  # Métodos configurados en .env
-    allow_headers=CORS_ALLOW_HEADERS,  # Headers específicos requeridos
+    allow_credentials=True,
+    allow_methods=CORS_METHODS,
+    allow_headers=CORS_ALLOW_HEADERS,
 )
 
 
 
-@app.middleware("http")
-async def google_auth_check(request: Request, call_next: Callable[[Request], Awaitable[Response]]):
-    # Public endpoints that don't require authentication
-    public_paths = ["/health"]
-    
-    if request.url.path in public_paths:
-        return await call_next(request)
-    
-    token = request.headers.get("Authorization")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing ID token")
+# Authentication is now handled by dependencies in individual routes
+# No middleware needed - this provides better error handling and debugging
 
-    # TESTING MODE: Skip real Google validation for fake tokens
-    # if TESTING_MODE:
-        # In testing mode, just check if token exists and has Bearer format
-        # if not token.startswith("Bearer "):
-        #     raise HTTPException(status_code=401, detail="Invalid token format")
-        # Let the route dependency handle fake token validation
-        # return await call_next(request)
-    
-    # PRODUCTION MODE: Real Google token validation
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{URL_AUTH}{token.split()[-1]}")
-        if response.status_code != 200 or response.json().get("aud") != GOOGLE_CLIENT_ID:
-            raise HTTPException(status_code=403, detail="Invalid token")
-
-    return await call_next(request)
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -100,6 +86,5 @@ async def health_check():
         api_version="1.0.0"
     )
 
-app.include_router(ask_router.router, prefix="/ask")
-
-
+app.include_router(translate_router.router, prefix="/api")
+app.include_router(resume_router.router, prefix="/api")

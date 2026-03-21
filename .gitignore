@@ -25,6 +25,7 @@ MANIFEST
 # Virtual environments
 .env
 .venv
+.env.docker
 env/
 venv/
 ENV/
@@ -72,3 +73,6 @@ logs/
 htmlcov/
 .coverage
 .pytest_cache/
+/nginx/
+nginx/
+docker-compose.yml

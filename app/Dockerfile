@@ -1,12 +1,7 @@
-FROM python:3.13.-slim
+FROM python:3.12.8-slim-bookworm
 
 # Set working directory
 WORKDIR /app
-
-# Install system dependencies and upgrade packages to fix vulnerabilities
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -22,11 +17,11 @@ RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE 443
 
-# Health check
+# Health check using Python instead of curl
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:443/health')" || exit 1
 
 # Run the application
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443"]
