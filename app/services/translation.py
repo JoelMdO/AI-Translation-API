@@ -5,10 +5,10 @@ Coordinates between authentication, text processing, and Ollama communication
 from config import OLLAMA_BACKUP_MODEL, OLLAMA_DEFAULT_MODEL
 from utils.sanitize_html import sanitize_html
 from utils.sanitize_text import sanitize_text
-from utils.ollama_services import ollama_service
-from utils.create_prompt_translation import create_prompt_translation
+from utils.translation.translate_html_content import translateHTMLContent
 from schemas.translation import TranslationRequest, TranslationResponse
 import re
+from config import OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL
 ##//TODO remove app before deploying 
 # from app.utils.sanitize_html import sanitize_html
 # from app.utils.ollama_services import ollama_service
@@ -19,38 +19,24 @@ import re
 
 class TranslationService:
     """Service class for handling translation business logic"""
-    
+
     async def translate(self, request: TranslationRequest) -> TranslationResponse:
         """
         Process translation request with HTML content preservation
         Returns an object with translated fields, avoids multiple Ollama calls if possible.
         """
         try:
-            # import json
-            # def sanitize_html(html: str) -> str:
-            #     # Remove <script> and other dangerous tags, but keep safe HTML structure
-            #     # Simple regex-based removal for <script> and event handlers
-            #     html = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', html, flags=re.DOTALL|re.IGNORECASE)
-            #     # Remove on* event handlers (e.g., onclick, onerror)
-            #     html = re.sub(r'on\w+\s*=\s*"[^"]*"', '', html, flags=re.IGNORECASE)
-            #     html = re.sub(r'on\w+\s*=\s*\'[^\']*\'', '', html, flags=re.IGNORECASE)
-            #     html = re.sub(r'on\w+\s*=\s*[^ >]+', '', html, flags=re.IGNORECASE)
-            #     # Remove javascript: in href/src
-            #     html = re.sub(r'(href|src)\s*=\s*"javascript:[^"]*"', '', html, flags=re.IGNORECASE)
-            #     html = re.sub(r'(href|src)\s*=\s*\'javascript:[^\']*\'', '', html, flags=re.IGNORECASE)
-            #     return html
-
             has_html = any('<' in text and '>' in text for text in [request.title, request.body, request.section])
             if has_html:
                 # If HTML, translate each field separately (Ollama likely needs to preserve tags)
-                translated_title = await ollama_service.translate_html_content(
-                    request.title, request.target_language
+                translated_title = await translateHTMLContent.translate_html_content(
+                    content=request.title, target_language=request.target_language
                 )
-                translated_body = await ollama_service.translate_html_content(
-                    request.body, request.target_language
+                translated_body = await translateHTMLContent.translate_html_content(
+                    content=request.body, target_language=request.target_language
                 )
-                translated_section = await ollama_service.translate_html_content(
-                    request.section, request.target_language
+                translated_section = await translateHTMLContent.translate_html_content(
+                    content=request.section, target_language=request.target_language
                 )
                 # Sanitize only for malicious content, not for structure
                 translated_title = sanitize_text(translated_title)
@@ -62,17 +48,16 @@ class TranslationService:
                 sanitized_body = sanitize_text(request.body)
                 sanitized_section = sanitize_text(request.section)
                 sanitized_target_language = sanitize_text(request.target_language)
-
-                prompt = create_prompt_translation(
+                # Get translation from Ollama (single call)
+                # raw_translation = await ollama_service.generate_translation(
+                #     prompt=prompt,
+                # )
+                raw_translation = await translateHTMLContent.translate_raw_content(
+                    text=f"{sanitized_title}\n{sanitized_body}\n{sanitized_section}",
                     title=sanitized_title,
                     body=sanitized_body,
                     section=sanitized_section,
-                    target_language=sanitized_target_language
-                )
-                print(f"DEBUG: Generated prompt for translation: {prompt}")
-                # Get translation from Ollama (single call)
-                raw_translation = await ollama_service.generate_translation(
-                    prompt=prompt,
+                    target_language=sanitized_target_language,
                 )
                 print(f"DEBUG: Raw translation response: {raw_translation}")
                 # Try to parse the response into fields (assuming format: Título: ... Cuerpo: ... Sección: ...)
@@ -100,6 +85,13 @@ class TranslationService:
             print(f"DEBUG- Body: {translated_body}, ")
             print(f"DEBUG- Section: {translated_section}")
             print("==="*40)
+
+            # Ensure base_url is configured and non-None for type-safety
+            model_used=OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL
+            if model_used is None:
+                raise RuntimeError("OLLAMA_MODEL is not configured. Set OLLAMA_MODEL in config.")
+            assert isinstance(model_used, str)
+
             # Return a real dict for translated_text
             return TranslationResponse(
                 translated_text={
@@ -108,7 +100,7 @@ class TranslationService:
                     "section": translated_section
                 },
                 success=True,
-                model_used=OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL
+                model_used=model_used
             )
         except Exception:
             return TranslationResponse(

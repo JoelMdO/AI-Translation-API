@@ -14,3 +14,11 @@ OLLAMA_DEFAULT_MODEL = os.getenv("OLLAMA_DEFAULT_MODEL")
 OLLAMA_BACKUP_MODEL = os.getenv("OLLAMA_BACKUP_MODEL")
 TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
+
+# RAG / ChromaDB settings
+CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
+CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
+RAG_N_RESULTS = int(os.getenv("RAG_N_RESULTS", "3"))
+CMS_RAG_URL = os.getenv("CMS_RAG_URL", "")
+CMS_RAG_TOKEN = os.getenv("CMS_RAG_TOKEN", "")

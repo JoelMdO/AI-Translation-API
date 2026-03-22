@@ -1,18 +1,18 @@
 # ============================================================================== 
 # Author: Joel Montes de Oca Lopez
 # Creation Date: 20/10/2025
-# Last Modified: 20/10/2025
+# Last Modified: 22/03/2026
 # Contact: https://joelmontesdeoca.dev
 # 
 # Description:
-# This script contains the API routes for articles content resume with Ollama LLM, the api
+# This script contains the API routes for articles content summary with Ollama LLM, the api
 # gets called from CMS app to create a proper description of the article.
 #
 # Contained Routes:
 #
-# 1. Route: /resume
+# 1. Route: /summary
 #    Description: Creates a summary for the article using the Ollama service. This endpoint accepts
-#    a resume request containing the article content, the target length for the summary,
+#    a summary request containing the article content, the target length for the summary,
 #    and the model to use. It processes the request, interacts with the Ollama service
 #    for summarization, and returns the summarized text along with metadata about the
 #    summarization process.
@@ -28,23 +28,23 @@ from fastapi import APIRouter, HTTPException, status, Depends
 # from app.utils.auth import verify_user_access
 # from app.schemas.testUser import GoogleUser
 from schemas.translation import ResumeRequest, ResumeResponse
-from services.resume import resume_service
+from services.summary import summary_service
 from utils.auth import verify_user_access
 from schemas.testUser import GoogleUser
 
 router = APIRouter()
 
 # ===========================================================================
-# Route: /user/add
-# Description:  Create a new user
+# Route: /summary
+# Description:  Create a summary for the article
 # ===========================================================================
-@router.post("/resume", response_model=ResumeResponse)
-async def resume_text(
+@router.post("/summary", response_model=ResumeResponse)
+async def summarize_text(
     request: ResumeRequest,
     current_user: GoogleUser = Depends(verify_user_access)
 ):
     """
-    Resume endpoint with Google Authentication
+    Summary endpoint with Google Authentication
     1. Validates Google ID token from NextJS app
     2. Checks user permissions
     3. Sends text to Ollama for summarization
@@ -58,14 +58,14 @@ async def resume_text(
     """
     try:
         # Process summarization through service layer
-        print(f"DEBUG: Resume request: {request}")
-        response = await resume_service.summarize(request)
-        print(f"DEBUG: Resume successful: {response}")
+        print(f"DEBUG: Summary request: {request}")
+        response = await summary_service.summarize(request)
+        print(f"DEBUG: Summary successful: {response}")
         return response
         
     except Exception as e:
-        print(f"DEBUG: Resume failed: {str(e)}")
+        print(f"DEBUG: Summary failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Resume failed: {str(e)}"
+            detail=f"Summary failed: {str(e)}"
         )

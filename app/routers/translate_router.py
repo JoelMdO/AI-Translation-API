@@ -1,12 +1,12 @@
 # ============================================================================== 
 # Author: Joel Montes de Oca Lopez
 # Creation Date: 25/07/2025
-# Last Modified: 25/07/2025
+# Last Modified: 21/03/2026
 # Contact: https://joelmontesdeoca.dev
 # 
 # Description:
-# This script contains the API routes for api translation with Ollama LLM, the api
-# gets called from CMS app for translation.
+# This script contains the API routes for api translation with Ollama LLM, using 
+# the models Llama 3.2 and Yag, the api gets called from CMS app for translation.
 #
 # Contained Routes:
 #
