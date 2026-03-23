@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.exceptions import RequestValidationError
 # from fastapi import Request
 from schemas.translation import HealthResponse
-from API.app.utils.translation.translate_html_content import translateHTMLContent as ollama_service
+from utils.translation.translate_html_utils import translateHTML_utils as ollama_service
 from utils.rag_service import rag_service
 from utils.rag_ingestion import ingest_all, is_populated
 from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
