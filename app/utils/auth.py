@@ -73,16 +73,16 @@ async def verify_google_access_token(credentials: HTTPAuthorizationCredentials =
                 name=str(user_info.get("name", "")),
                 verified=bool(user_info.get("verified_email", False))
             )
-    except httpx.RequestError as e:
+    except httpx.RequestError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token validation failed: {str(e)}",
+            detail="Token validation failed.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
+            detail="Authentication failed.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

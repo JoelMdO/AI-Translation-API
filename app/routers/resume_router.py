@@ -67,5 +67,5 @@ async def summarize_text(
         print(f"DEBUG: Summary failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Summary failed: {str(e)}"
+            detail="Summary failed."
         )

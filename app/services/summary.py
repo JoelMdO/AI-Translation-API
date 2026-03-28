@@ -71,9 +71,9 @@ class SummaryService:
                 article=resume_article,
                 success=True,
             )
-        except Exception as e:
+        except Exception:
             return ResumeResponse(
-                article=f"Error during resume generation: {str(e)}",
+                article="Error during resume generation.",
                 success=False,
             )
          
