@@ -1,21 +1,25 @@
 {
   "style_rules": {
-    "2.": "Acronym Preservation: Keep standard aeronautical acronyms in their original English form (e.g., FMS, MCU, APU, ATC, METAR, PPR). Do not attempt to translate or localize them.",
-    "3.": " Unit Integrity: Do not perform unit conversions. Maintain the original units (ft, kt, hPa, inHg, lbs, etc.). Ensure a non-breaking space exists between the value and the unit (e.g., 30,000 ft).",
-    "4.": " Operational Verb Forms: Use the Infinitive mood for checklists, step-by-step procedures, and manual descriptions (e.g., \"Verificar\" instead of \"Verifique\").",
-    "5.": " Critical Safety Terminology: Strictly avoid Falsos Amigos (false cognates). * Warning must always be translated as ADVERTENCIA. * Caution must always be translated as PRECAUCIÓN. * Notice/Note must be translated as NOTA.",
-    "6.": " Numerical Rules: Write numbers from zero to nine in letters and 10 onwards in digits. Exception: Always use digits for technical measurements, altitudes, headings, frequencies, and percentages.",
-    "7.": " Spanish Orthotypography: You must strictly follow Spanish grammar rules, including mandatory opening signs (¿, ¡) and correct placement of punctuation (commas, periods) relative to parentheticals.",
-    "8.": " Causality vs. Gerunds: Do not use the gerund to indicate consequence or posteriority (e.g., avoid failing, causing...). The cause-effect relationship must be explicit (e.g., ...fallará, lo que resultará en...).",
-    "9.": " Casing and Formatting: * Use Sentence case for general descriptions. * Maintain UPPERCASE only for specific flight modes, annunciations, or if explicitly used in the original text (e.g., ALT HOLD, VNAV, LNAV).",
-    "10.": " Prohibited Language: Strictly forbid the use of slang, non-standard acronyms, or informal expressions. Maintain a \"Senior Flight Dispatcher\" level of professionalism.",
-    "11.": "Output: Provide only the translated text. Do not include commentary, labels, or explanations."
+    "en": [
+      "Acronym Preservation: Keep standard aeronautical acronyms in their original English form (e.g., FMS, MCU, APU, ATC, METAR, PPR). Do not attempt to translate or localize them.",
+      " Unit Integrity: Do not perform unit conversions. Maintain the original units (ft, kt, hPa, inHg, lbs, etc.). Ensure a non-breaking space exists between the value and the unit (e.g., 30,000 ft).",
+      " Operational Verb Forms: Use the Infinitive mood for checklists, step-by-step procedures, and manual descriptions (e.g., \"Verificar\" instead of \"Verifique\").",
+      " Critical Safety Terminology: Strictly avoid Falsos Amigos (false cognates). * Warning must always be translated as ADVERTENCIA. * Caution must always be translated as PRECAUCIÓN. * Notice/Note must be translated as NOTA.",
+      " Numerical Rules: Write numbers from zero to nine in letters and 10 onwards in digits. Exception: Always use digits for technical measurements, altitudes, headings, frequencies, and percentages.",
+      " Spanish Orthotypography: You must strictly follow Spanish grammar rules, including mandatory opening signs (¿, ¡) and correct placement of punctuation (commas, periods) relative to parentheticals.",
+      " Causality vs. Gerunds: Do not use the gerund to indicate consequence or posteriority (e.g., avoid failing, causing...). The cause-effect relationship must be explicit (e.g., ...fallará, lo que resultará en...).",
+      " Casing and Formatting: * Use Sentence case for general descriptions. * Maintain UPPERCASE only for specific flight modes, annunciations, or if explicitly used in the original text (e.g., ALT HOLD, VNAV, LNAV).",
+      " Prohibited Language: Strictly forbid the use of slang, non-standard acronyms, or informal expressions. Maintain a \"Senior Flight Dispatcher\" level of professionalism.",
+      "Output: Provide only the translated text. Do not include commentary, labels, or explanations."
+    ]
   },
   "summary_rules": {
-    "1.": "Content Focus: The summary must capture the essence of the article, highlighting key points, main arguments, and critical information without adding personal opinions or interpretations.",
-    "2.": "Style and Tone: The summary should be written in a neutral, professional, and clear style. Avoid slang, exaggeration, or personal commentary.",
-    "3.": "Purpose: The summary should serve as a teaser that sparks curiosity without fully revealing the article's content.",
-    "4.": "Length: The summary should be a single paragraph no more than 40 words."
+    "en": [
+      "Content Focus: The summary must capture the essence of the article, highlighting key points, main arguments, and critical information without adding personal opinions or interpretations.",
+      "Style and Tone: The summary should be written in a neutral, professional, and clear style. Avoid slang, exaggeration, or personal commentary.",
+      "Purpose: The summary should serve as a teaser that sparks curiosity without fully revealing the article's content.",
+      "Length: The summary should be a single paragraph no more than 40 words."
+    ]
   },
   "vocabulary": {
     "en": {
