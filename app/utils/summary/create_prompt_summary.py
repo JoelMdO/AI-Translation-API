@@ -34,11 +34,21 @@ async def create_prompt_summary(type: str, text: str, target_language: str, titl
         rules_block = "\n".join(f"- {r}" for r in summary_rules)
         summary_rules = f"## Summary Rules\n{rules_block}"
 
+    if target_language.lower() in ("en", "english"):
+        title_label = "Title"
+        body_label = "Article"
+    else:
+        title_label = "Titulo"
+        body_label = "Artículo"
+
+    title_part = f"{title_label}: {title}" if title else ""
+    body_part = f"{body_label}: {body}" if body else ""
+
     prompt = f"""You are an AI specialized in creating article descriptions. Given the below blog title and slice of article body, generate a description that provides a clear idea of its content while encouraging readers to explore further. 
     the language shall be {target_language}, accordingly create the description by following the next list of rules:
                     Rules:{summary_rules}
 - Return only the article description. Do not wrap it in extra markdown, do not explain, do not say "Here is your article description".
 - Do not return any context array numbers.
-{"if {target_language} == 'en': Title: " + title if title else "", " Article: " + body if body else ""} else {"Titulo: " + title if title else "", " Artículo: " + body if body else ""}"""
+{title_part} {body_part}"""
     
     return prompt
