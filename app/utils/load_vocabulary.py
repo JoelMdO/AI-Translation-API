@@ -20,11 +20,13 @@ def _load() -> None:
             data = json.load(f)
         _cache["style_rules"] = data.get("style_rules", {})
         _cache["vocabulary"] = data.get("vocabulary", {})
+        _cache["summary_rules"] = data.get("summary_rules", {})
         print("✅ vocabulary.json loaded")
     except Exception as e:
         print(f"⚠️  Could not load vocabulary.json: {e}")
         _cache["style_rules"] = {}
         _cache["vocabulary"] = {}
+        _cache["summary_rules"] = {}
     abbrev_path = os.path.join(os.path.dirname(__file__), "..", "data", "abbreviation.json")
     try:
         with open(abbrev_path, "r", encoding="utf-8") as f:
