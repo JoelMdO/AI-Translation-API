@@ -43,56 +43,64 @@ class TranslateHTMLContent:
         assert isinstance(self.model, str)
     
         try:
-            print(f"DEBUG: Starting HTML translation at translate html contentwith improved structure preservation")
+            print(f"DEBUG: Starting HTML translation with structure preservation")
             chunks = TranslateHTMLUtils().split_html_into_chunks(content, max_chars=5000)
             translated_chunks: List[str] = []
             for i, chunk in enumerate(chunks):
                 try:
-                # Extract text and structure from chunk
-                    text_segments = TranslateHTMLUtils().extract_text_with_structure(chunk)
-                
+                    # Extract plain text segments and a placeholder template that preserves the HTML structure
+                    text_segments, placeholder_template = TranslateHTMLUtils().extract_text_from_html(chunk)
+
                     if not text_segments:
                         translated_chunks.append(chunk)
                         continue
 
-            # Create prompt for translation with numbered segments
-                    instructions = await create_prompt_translation(type="html", text=chunk, target_language=target_language)
+                    # Send only plain text (no HTML tags) to the LLM
+                    text_to_translate = "---SEGMENT---".join(text_segments)
+                    instructions = await create_prompt_translation(type="html", text=text_to_translate, target_language=target_language)
                     prompt = f"""{instructions}\n
                     The text to translate is:
-                    {chunk}"""
+                    {text_to_translate}"""
 
-                    print(f"DEBUG: Generated prompt for structured translation")
-                
-                # Get translation
+                    print(f"DEBUG: Generated prompt for translation of chunk {i+1}")
+
                     translated_response = await generate_translation(prompt, timeout=self.timeout, base_url=self.base_url)
                     print("==="*40)
                     print(f"DEBUG: Raw translation response: {translated_response}")
                     print("==="*40)
-            # Parse numbered response back to list
-            # translated_segments = self._parse_numbered_translation(translated_response, len(text_segments))
-                # Validate translation
+
                     if not translated_response or len(translated_response.strip()) < 5:
                         print(f"WARNING: Empty or invalid translation for chunk {i+1}")
-                        translated_chunks.append(chunk)  # Keep original if translation failed
+                        translated_chunks.append(chunk)
                         continue
-                    
-                    translated_chunks.append(translated_response.strip())
-                    
+
+                    # Split response back into segments and reconstruct HTML
+                    translated_segments = [seg.strip() for seg in translated_response.split("---SEGMENT---")]
+
+                    if len(translated_segments) != len(text_segments):
+                        # Fallback: translate each segment individually to ensure counts match
+                        translated_segments = []
+                        for segment in text_segments:
+                            individual_prompt = f"Translate this text to {target_language}: {segment}"
+                            translated_segment = await generate_translation(individual_prompt, timeout=self.timeout, base_url=self.base_url)
+                            translated_segments.append(translated_segment.strip())
+
+                    reconstructed = TranslateHTMLUtils().reconstruct_html(translated_segments, placeholder_template)
+                    translated_chunks.append(reconstructed)
+
                 except Exception as chunk_error:
                     print(f"ERROR: Failed to translate chunk {i+1}: {str(chunk_error)}")
-                    translated_chunks.append(chunk)  # Keep original on error
+                    translated_chunks.append(chunk)
                     continue
-            
-            # Reconstruct HTML with translated text
+
             result = "\n".join(translated_chunks)
             print("==="*40)
             print(f"DEBUG: Final translated HTML result: {result}")
             print("==="*40)
             return result
-            
+
         except Exception as e:
-            print(f"DEBUG: Error in new structured translation: {e}. Falling back to old method.")
-            # Fallback to old method if new approach fails
+            print(f"DEBUG: Error in structured translation: {e}. Falling back to old method.")
             return await self._translate_html_content_old_method(content, target_language)
 
 
