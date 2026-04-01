@@ -1,7 +1,9 @@
 """
 Main FastAPI application
 Simple translation API that validates Google tokens and calls Ollama for translation
+Simple translation API that validates Google tokens and calls Ollama for translation
 """
+from fastapi import FastAPI
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +26,7 @@ from routers import rag_router
 if( not ALLOWED_ORIGINS):
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file.")
 @asynccontextmanager
+# async def lifespan(app: FastAPI):
 # async def lifespan(app: FastAPI):
 async def lifespan(app: FastAPI):
     """
@@ -72,10 +75,30 @@ app = FastAPI(
 #     print("================================")
 #     # Return the default error structure so client still sees details
 #     return JSONResponse(status_code=422, content={"detail": exc.errors()})
+# @app.exception_handler(RequestValidationError)
+# async def validation_exception_handler(request: Request, exc: RequestValidationError):
+#     raw = await request.body()
+#     print("=== REQUEST VALIDATION ERROR ===")
+#     print("URL:", request.url)
+#     print("RAW BODY (first 2000 bytes):", raw[:2000])
+#     print("Pydantic errors:", exc.errors())
+#     print("================================")
+#     # Return the default error structure so client still sees details
+#     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 # Configuración del middleware de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=CORS_METHODS,
+    allow_headers=CORS_ALLOW_HEADERS,
+)
+
+
+
+# Authentication is now handled by dependencies in individual routes
+# No middleware needed - this provides better error handling and debugging
+
     allow_credentials=True,
     allow_methods=CORS_METHODS,
     allow_headers=CORS_ALLOW_HEADERS,

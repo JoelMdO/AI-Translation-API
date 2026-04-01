@@ -5,13 +5,14 @@ Production-ready FastAPI service for translation and summarization, featuring Re
 ## Quick Start
 
 1. **Environment Setup**:
+1. **Environment Setup**:
 
    ```bash
    cp .env.production .env
    # Edit .env with your Google Client ID and RAG/ChromaDB settings
    ```
 
-2. **Docker Deployment**:
+1. **Docker Deployment**:
    ```bash
    docker-compose up -d
    ```
