@@ -25,6 +25,10 @@ class TranslationService:
         Process translation request with HTML content preservation
         Returns an object with translated fields, avoids multiple Ollama calls if possible.
         """
+        # Determine the model that will actually be used: env vars take precedence,
+        # falling back to the model field in the request so the value is consistent
+        # across both success and failure response paths.
+        model_used: str = OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL or request.model
         try:
             has_html = any('<' in text and '>' in text for text in [request.title, request.body, request.section])
             if has_html:
@@ -86,12 +90,6 @@ class TranslationService:
             print(f"DEBUG- Section: {translated_section}")
             print("==="*40)
 
-            # Ensure base_url is configured and non-None for type-safety
-            model_used=OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL
-            if model_used is None:
-                raise RuntimeError("OLLAMA_MODEL is not configured. Set OLLAMA_MODEL in config.")
-            assert isinstance(model_used, str)
-
             # Return a real dict for translated_text
             return TranslationResponse(
                 translated_text={
@@ -110,7 +108,7 @@ class TranslationService:
                     "section": ""
                 },
                 success=False,
-                model_used=request.model
+                model_used=model_used
             )
 
 
