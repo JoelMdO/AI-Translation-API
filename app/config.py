@@ -4,7 +4,13 @@ import ast
 
 load_dotenv()
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS")
+_raw_origins = os.getenv("ALLOWED_ORIGINS", '["*"]')
+try:
+    ALLOWED_ORIGINS = ast.literal_eval(_raw_origins)
+    if not isinstance(ALLOWED_ORIGINS, list):
+        ALLOWED_ORIGINS = [str(ALLOWED_ORIGINS)]
+except (ValueError, SyntaxError):
+    ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 CORS_METHODS = ast.literal_eval(os.getenv("CORS_METHODS", '["POST","GET","OPTIONS"]'))
 CORS_ALLOW_HEADERS = ast.literal_eval(os.getenv("CORS_ALLOW_HEADERS", '["Content-Type","Authorization"]'))
 URL_AUTH = os.getenv("URL_AUTH")

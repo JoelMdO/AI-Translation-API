@@ -23,8 +23,9 @@ from routers import rag_router
 # from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
 # from app.routers import resume_router, translate_router
 
-if( not ALLOWED_ORIGINS):
+if not ALLOWED_ORIGINS:
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file.")
+
 @asynccontextmanager
 # async def lifespan(app: FastAPI):
 # async def lifespan(app: FastAPI):
@@ -93,17 +94,6 @@ app.add_middleware(
     allow_methods=CORS_METHODS,
     allow_headers=CORS_ALLOW_HEADERS,
 )
-
-
-
-# Authentication is now handled by dependencies in individual routes
-# No middleware needed - this provides better error handling and debugging
-
-    allow_credentials=True,
-    allow_methods=CORS_METHODS,
-    allow_headers=CORS_ALLOW_HEADERS,
-)
-
 
 
 # Authentication is now handled by dependencies in individual routes
