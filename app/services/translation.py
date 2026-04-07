@@ -39,9 +39,9 @@ class TranslationService:
                     content=request.section, target_language=request.target_language
                 )
                 # Sanitize only for malicious content, not for structure
-                translated_title = sanitize_text(translated_title)
+                translated_title = sanitize_html(translated_title)
                 translated_body = sanitize_html(translated_body)
-                translated_section = sanitize_text(translated_section)
+                translated_section = sanitize_html(translated_section)
             else:
                 # For plain text, sanitize and combine into a single prompt for one Ollama call
                 sanitized_title = sanitize_text(request.title)
