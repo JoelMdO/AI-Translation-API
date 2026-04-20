@@ -1,8 +1,6 @@
 """
 Google Access Token Authentication utilities
 Handles Google OAuth access token validation for NextJS app integration
-Google Access Token Authentication utilities
-Handles Google OAuth access token validation for NextJS app integration
 """
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -107,7 +105,6 @@ def check_user_permissions(user_info: GoogleUser) -> bool:
 
 async def verify_user_access(credentials: HTTPAuthorizationCredentials = Depends(security)) -> GoogleUser:
     """
-    Complete user verification including Google access token and permissions
     Complete user verification including Google access token and permissions
     """
     # Verify Google access token

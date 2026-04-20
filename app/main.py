@@ -36,8 +36,9 @@ logger = logging.getLogger(__name__)
 # from app.routers import resume_router, translate_router
 # from app.routers import rag_router
 
-if( not ALLOWED_ORIGINS):
+if not ALLOWED_ORIGINS:
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file.")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
