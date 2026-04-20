@@ -28,6 +28,7 @@ class HealthResponse(BaseModel):
     """Response schema for health check endpoint"""
     status: str = Field(..., description="API status")
     ollama_connected: bool = Field(..., description="Whether Ollama is accessible")
+    chroma_connected: bool = Field(..., description="Whether ChromaDB is accessible")
     api_version: str = Field(..., description="API version")
 
 

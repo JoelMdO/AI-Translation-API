@@ -5,11 +5,12 @@ Coordinates between authentication, text processing, and Ollama communication
 # import re
 
 # from app.utils.sanitize_html import sanitize_html
-# from app.utils.ollama_services import ollama_service
 # from app.utils.sanitize_text import sanitize_text
+# from app.utils.summary.summary_article import summary_utils
+# from app.utils.rag_service.build_context import build_context_block
 # from app.schemas.translation import ResumeRequest, ResumeResponse
-# from app.config import OLLAMA_DEFAULT_MODEL
-
+# from app.config import OLLAMA_BACKUP_MODEL, OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+##//TODO remove the app. before deploying 
 from utils.sanitize_html import sanitize_html
 from utils.sanitize_text import sanitize_text
 from utils.summary.summary_article import summary_utils

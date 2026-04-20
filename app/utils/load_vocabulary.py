@@ -42,26 +42,35 @@ def _load() -> None:
         print(f"⚠️  Could not load abbreviation.json: {e}")
         _cache["abbreviation"] = {}
 
+def language_key(language: str) -> str:
+    """Normalize language name to a consistent key format."""
+    if language == "Spanish":
+        return "en"
+    return "en"
+
 def get_vocabulary(language: str) -> Dict[str, str]:
     """Return the EN→target or ES→target term map for the given language."""
+    print(f"DEBUG: get_vocabulary called for language: {language}")
     _load()
-    lang = language.lower()[:2]
+    lang = language_key(language)
     return _cache.get("vocabulary", {}).get(lang, {})
 
 
 def get_style_rules(language: str) -> List[str]:
     """Return per-language style rule strings."""
     _load()
-    lang = language.lower()[:2]
+    # lang = language.lower()[:2]
+    lang = language_key(language)
     return _cache.get("style_rules", {}).get(lang, [])
 
 def get_abbreviations() -> Dict[str, str]:
     """Return the abbreviation → Spanish term map."""
     _load()
+    print("DEBUG: get_abbreviations called")
     return _cache.get("abbreviation", {})
 
 def get_summary_rules(language: str) -> List[str]:
     """Return per-language summary rule strings."""
     _load()
-    lang = language.lower()[:2]
+    lang = language_key(language)
     return _cache.get("summary_rules", {}).get(lang, [])

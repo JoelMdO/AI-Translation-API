@@ -9,7 +9,7 @@ Coordinates between authentication, text processing, and Ollama communication
 # from app.utils.sanitize_text import sanitize_text
 # from app.schemas.translation import ResumeRequest, ResumeResponse
 # from app.config import OLLAMA_DEFAULT_MODEL
-
+##//TODO remove the app. before deploying 
 from utils.sanitize_html import sanitize_html
 from utils.ollama_services import ollama_service
 from utils.sanitize_text import sanitize_text

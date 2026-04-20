@@ -19,99 +19,171 @@ before grouping so that every 3 consecutive lines form one entry.
 
 Output format:
 [
-  {"abbreviation": "A/A", "english": "Air/air", "spanish": "Aire a aire"},
+  {"abbreviation": "A/A", "english": "air air", "spanish": "aire a aire", "id": "entry_0"},
   ...
 ]
+
+Normalized for embedding generation (Aya + Chroma) with English to Spanish translation.
 """
 
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Dict, List
 
 try:
-    import pymupdf  # type: ignore[import]
+    import pymupdf
 except ImportError:
     sys.exit("pymupdf is required.  Install it with:  pip install pymupdf")
 
 
-# Noise-line patterns to skip during extraction
-_SECTION_HEADER_RE = re.compile(r'^[A-Z]$')
-_PAGE_NUMBER_RE = re.compile(r'^\d+$')
-_TITLE_WORDS = ('VOCABULARIO', 'INGLÉS', 'ESPAÑOL', 'AERONÁUTICO')
+NOISE_PATTERNS = [
+    re.compile(r'^[A-Z]$'),
+    re.compile(r'^\d+$'),
+    re.compile(r'^VOCABULARIO.*', re.IGNORECASE),
+    re.compile(r'^INGLÉS.*', re.IGNORECASE),
+    re.compile(r'^ESPAÑOL.*', re.IGNORECASE),
+    re.compile(r'^AERONÁUTICO.*', re.IGNORECASE),
+    re.compile(r'^ABREVIATURAS.*', re.IGNORECASE),
+]
 
 
-def _is_noise(line: str) -> bool:
+def normalize_text(text: str) -> str:
+    """Normalize text for embedding generation."""
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join(c for c in text if not unicodedata.combining(c))
+    text = text.lower().strip()
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+
+def clean_abbreviation(text: str) -> str:
+    """Clean abbreviation, preserving slashes and special chars."""
+    return text.strip()
+
+
+def is_noise(line: str) -> bool:
     """Return True for lines that are not vocabulary content."""
-    if _SECTION_HEADER_RE.match(line):
+    line = line.strip()
+    if not line:
         return True
-    if _PAGE_NUMBER_RE.match(line):
-        return True
-    upper = line.upper()
-    return any(word in upper for word in _TITLE_WORDS)
+    for pattern in NOISE_PATTERNS:
+        if pattern.match(line):
+            return True
+    return False
 
 
-# ── Extraction ─────────────────────────────────────────────────────────────────
+def extract_from_table(page) -> List[List[str]]:
+    """Try to extract vocabulary from PDF tables."""
+    tables = page.find_tables()
+    if tables and tables[0].rows:
+        rows = []
+        for table in tables:
+            for row in table.extract():
+                if len(row) >= 3:
+                    rows.append([normalize_text(c) if i > 0 else c for i, c in enumerate(row[:3])])
+        return rows
+    return []
 
-def extract_entries(pdf_path: str) -> List[Dict[str, str]]:
+
+def extract_entries(pdf_path: str, use_tables: bool = True) -> List[Dict[str, str]]:
     """
     Extract vocabulary entries from the PDF using PyMuPDF.
-
-    The PDF is structured as repeating triplets of text lines per entry:
-        <ABBREVIATION>   e.g. "A/A"
-        <English term>   e.g. "Air/air"
-        <Spanish term>   e.g. "Aire a aire"
-
-    Noise lines (page numbers, single-letter section headers, title) are
-    filtered out before grouping.
+    
+    Attempts table extraction first, then falls back to line-based extraction.
+    Applies normalization for embedding generation.
     """
-    doc = pymupdf.open(pdf_path) # type: ignore[attr-defined]
-
-    lines: List[str] = []
-    for page in doc: # type: ignore[attr-defined]
-        for raw in page.get_text().splitlines(): # type: ignore[attr-defined]
-            s = raw.strip() # type: ignore[attr-defined]
-            if s and not _is_noise(s): # type: ignore[attr-defined]
-                lines.append(s) # type: ignore[attr-defined]
-
+    doc = pymupdf.open(pdf_path)
+    
     entries: List[Dict[str, str]] = []
-    i = 0
-    while i + 2 < len(lines):
-        entries.append({
-            "abbreviation": lines[i],
-            "english": lines[i + 1],
-            "spanish": lines[i + 2],
-        })
-        i += 3
-
+    
+    for page_num, page in enumerate(doc):
+        if use_tables:
+            table_rows = extract_from_table(page)
+            if table_rows:
+                i = 0
+                while i + 2 < len(table_rows):
+                    row = table_rows[i]
+                    if len(row) >= 3:
+                        entry = {
+                            "abbreviation": clean_abbreviation(row[0]),
+                            "english": row[1],
+                            "spanish": row[2],
+                        }
+                        if entry["abbreviation"] and entry["english"] and entry["spanish"]:
+                            entries.append(entry)
+                    i += 3
+                continue
+        
+        lines: List[str] = []
+        for raw in page.get_text().splitlines():
+            s = raw.strip()
+            if s and not is_noise(s):
+                lines.append(s)
+        
+        i = 0
+        while i + 2 < len(lines):
+            entry = {
+                "abbreviation": clean_abbreviation(lines[i]),
+                "english": normalize_text(lines[i + 1]),
+                "spanish": normalize_text(lines[i + 2]),
+            }
+            if entry["abbreviation"] and entry["english"] and entry["spanish"]:
+                entries.append(entry)
+            i += 3
+    
+    doc.close()
     return entries
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+def prepare_for_embedding(entry: Dict[str, str], index: int) -> Dict[str, str]:
+    """Prepare entry with embedding-ready text and unique ID."""
+    return {
+        "id": f"entry_{index}",
+        "abbreviation": entry["abbreviation"],
+        "english": entry["english"],
+        "spanish": entry["spanish"],
+        "english_text": f"Translate to Spanish: {entry['english']}",
+        "spanish_text": entry["spanish"],
+        "combined_text": f"{entry['english']} | {entry['spanish']}",
+    }
 
-def convert(pdf_path: str, output_path: str | None = None) -> List[Dict[str, str]]:
+
+def convert(pdf_path: str, output_path: str | None = None, use_tables: bool = True) -> List[Dict[str, str]]:
+    """
+    Convert PDF to normalized JSON entries.
+    
+    Args:
+        pdf_path: Path to input PDF file
+        output_path: Optional path for JSON output
+        use_tables: Attempt table extraction first (default True)
+    """
     path = Path(pdf_path)
     if not path.exists():
         sys.exit(f"File not found: {pdf_path}")
 
     print(f"Extracting from: {path.name}", file=sys.stderr)
 
-    entries = extract_entries(pdf_path)
+    entries = extract_entries(pdf_path, use_tables=use_tables)
 
     if not entries:
-        print("⚠️  No entries found. The PDF may be scanned/image-based.", file=sys.stderr)
+        print("No entries found. Trying fallback extraction...", file=sys.stderr)
+        entries = extract_entries(pdf_path, use_tables=False)
 
-    print(f"Entries found : {len(entries)}", file=sys.stderr)
+    print(f"Entries found: {len(entries)}", file=sys.stderr)
+
+    embedding_ready = [prepare_for_embedding(entry, i) for i, entry in enumerate(entries)]
 
     if output_path:
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(entries, f, ensure_ascii=False, indent=2)
-        print(f"✅ Written to: {output_path}", file=sys.stderr)
+            json.dump(embedding_ready, f, ensure_ascii=False, indent=2)
+        print(f"Wrote to: {output_path}", file=sys.stderr)
     else:
-        print(json.dumps(entries, ensure_ascii=False, indent=2))
+        print(json.dumps(embedding_ready, ensure_ascii=False, indent=2))
 
-    return entries
+    return embedding_ready
 
 
 if __name__ == "__main__":

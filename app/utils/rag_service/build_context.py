@@ -11,7 +11,7 @@ async def build_context_block(text: str, language: str) -> str:
     Queries ChromaDB, loads vocabulary, formats and returns the context block.
     An empty string is returned when RAG is unavailable.
     """
-    lang = language.lower()[:2]
+    lang = language
     passages = await query(text, lang)
     vocabulary = get_vocabulary(lang)
     abbreviations = get_abbreviations()

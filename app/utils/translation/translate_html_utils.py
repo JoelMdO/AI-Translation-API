@@ -5,10 +5,27 @@ Manages all interactions with the Ollama translation service with HTML preservat
 import httpx
 import re
 from typing import List, Tuple, Match, Dict, Any
+from utils.translation.tokenizer import AyaTokenizer
 from bs4 import BeautifulSoup, NavigableString, Tag
 from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL
+import logging
+
+logger = logging.getLogger(__name__)
 ##//TODO remove app before deploying 
 # from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+
+ALLOWED_HTML_TAGS = {
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    "p", "br", "hr",
+    "strong", "em", "u", "s",
+    "a", "img",
+    "figure", "figcaption",
+    "ul", "ol", "li",
+    "blockquote",
+    "code", "pre",
+    "table", "thead", "tbody", "tr", "th", "td",
+    "div", "span",
+}
 
 class TranslateHTMLUtils:
     """Service class for translating HTML content while preserving structure using Ollama LLM"""
@@ -277,75 +294,133 @@ class TranslateHTMLUtils:
         
         print(f"DEBUG: OLD METHOD - Reconstructed HTML: {result}")
         return result
-    def split_html_into_chunks(self, html: str, max_chars: int = 2000) :
+    def split_html_into_chunks(self, html: str, max_tokens: int = 360) -> List[str]:
         """
         Split HTML content into smaller chunks for translation.
         
         Strategy:
-        1. Primary split by <hr> (semantic boundary).
-        2. If any chunk exceeds `max_chars`, further split by <div> tags.
+        1. By tokens using AyaTokenizer, accumulating complete blocks of allowed tags to preserve structure as much as possible.
+        2. If any chunk exceeds `max_tokens`, further split by <div> tags.
         3. If still too large, fall back to character-based splitting at tag boundaries.
 
         Args:
             html: Full HTML content to split
-            max_chars: Maximum characters per chunk
+            max_tokens: Maximum tokens per chunk
 
         Returns:
             List of HTML chunks ready for translation
         """
-        final_chunks: list[str] = []
+        logger.info("DEBUG: Preparing to split HTML into chunks...")
+        self.tokenizer = AyaTokenizer()
+        logger.info("==Splitting HTML into chunks with self.tokenizer=%s", self.tokenizer)
+        self.max_tokens = max_tokens
+        logger.info("==Parsing HTML content with BeautifulSoup (max_tokens=%s)", self.max_tokens)
+        soup = BeautifulSoup(html, 'html.parser')  # type: ignore
 
-    # Step 1: split by <hr>
-        parts = html.split("<hr")
-        for i, part in enumerate(parts):
-            if i > 0:
-            # Reattach <hr> to keep original structure
-                part = "<hr" + part
-            part = part.strip()
-            if not part:
-                continue
+        # Get top-level children to preserve document flow (use getattr to satisfy type-checkers)
+        # body = getattr(soup, 'body', None)
+        # if body is not None:
+        #     top_level = list(getattr(body, 'children', []))
+        #     logger.info("=====Found <body> tag, using its children for chunking")
+        # else:
+        #     top_level = list(getattr(soup, 'children', []))
+        #     logger.info("===No <body> tag found, using top-level children for chunking")
 
-        # Step 2: enforce max length
-            if len(part) <= max_chars:
-                final_chunks.append(part)
+        # Walk only top-level block elements so nested tags (e.g. <strong> inside <p>)
+        # are not collected as separate blocks — avoids duplicate content in chunks.
+        root = soup.body if soup.body else soup
+        blocks: List[str] = []
+        for el in root.children:  # type: ignore
+            if isinstance(el, Tag) and el.name in ALLOWED_HTML_TAGS:
+                logger.info("Adding top-level tag <%s> to blocks for chunking", el.name)
+                blocks.append(str(el))
+
+        chunks: List[str] = []
+        current_blocks: List[str] = []
+        current_tokens = 0
+        for block in blocks:
+            tokens = self.tokenizer.count(block)
+            if current_tokens + tokens > self.max_tokens:
+                chunks.append(self._wrap(current_blocks))
+                current_blocks = [block]
+                current_tokens = tokens
             else:
-            # Try splitting further by </div>
-                buffer = ""
-                for sub in part.split("</div>"):
-                    if not sub.strip():
-                        continue
-                    candidate = buffer + sub + "</div>"
-                    if len(candidate) > max_chars:
-                        if buffer:
-                            final_chunks.append(buffer)
-                        buffer = sub + "</div>"
-                    else:
-                        buffer = candidate
-                if buffer:
-                    final_chunks.append(buffer)
+                current_blocks.append(block) # type: ignore
+                current_tokens += tokens
 
-    # Step 3: safeguard for any chunks still too large
-        safe_final: list[str] = []
-        for chunk in final_chunks:
-            if len(chunk) > max_chars:
-                start = 0
-                while start < len(chunk):
-                    slice_ = chunk[start:start + max_chars]
+        if current_blocks:
+            chunks.append(self._wrap(current_blocks)) # type: ignore
 
-                # try not to break inside a tag
-                    if slice_.count("<") > slice_.count(">"):
-                        cut = slice_.rfind(">")
-                        if cut != -1:
-                            safe_final.append(slice_[:cut+1])
-                        start += cut + 1
-                        continue
+        return chunks
 
-                    safe_final.append(slice_)
-                    start += max_chars
-            else:
-                safe_final.append(chunk)
 
-        return [c.strip() for c in safe_final if c.strip()]
+    def _wrap(self, blocks: List[str]) -> str:
+
+        return f"<div>{''.join(blocks)}</div>"
+        # current_buffer: list[str] = []
+        # current_len = 0
+
+        # def flush_buffer() -> None:
+        #     nonlocal current_buffer, current_len
+        #     if current_buffer:
+        #         chunk = ''.join(str(x) for x in current_buffer).strip()
+        #         if chunk:
+        #             final_chunks.append(chunk)
+        #     current_buffer = []
+        #     current_len = 0
+
+        # for element in top_level:
+        #     # Skip empty strings / whitespace nodes
+        #     if isinstance(element, NavigableString):
+        #         if not str(element).strip():
+        #             continue
+
+        #     element_str = str(element)
+        #     el_len = len(element_str)
+
+        #     # If element is an <hr>, attach it and force a boundary
+        #     if isinstance(element, Tag) and element.name == 'hr':
+        #         current_buffer.append(element_str)
+        #         flush_buffer()
+        #         continue
+
+        #     # If single element exceeds max, try splitting by child <p> or <div>
+        #     if el_len > max_chars and isinstance(element, Tag):
+        #         children_parts: list[str] = []
+        #         # Prefer direct block children (avoid using find_all to keep type-checkers happy)
+        #         for child in getattr(element, 'contents', []):
+        #             if isinstance(child, Tag) and getattr(child, 'name', None) in ALLOWED_HTML_TAGS:
+        #                 s = str(child).strip()
+        #                 if s:
+        #                     children_parts.append(s)
+
+        #         # If no suitable block children, fall back to chunking the element string
+        #         if not children_parts:
+        #             start = 0
+        #             while start < el_len:
+        #                 children_parts.append(element_str[start:start + max_chars])
+        #                 start += max_chars
+
+        #         for part in children_parts:
+        #             part_len = len(part)
+        #             if current_len + part_len > max_chars:
+        #                 flush_buffer()
+        #             current_buffer.append(part)
+        #             current_len += part_len
+        #         continue
+
+        #     # Normal accumulation: if adding the element would exceed max, flush first
+        #     if current_len + el_len > max_chars:
+        #         flush_buffer()
+
+        #     current_buffer.append(element_str)
+        #     current_len += el_len
+
+        # # Flush remaining buffer
+        # flush_buffer()
+
+        # # Final cleanup: strip and return
+        # return [c.strip() for c in final_chunks if c.strip()]
 
 
     def _parse_numbered_translation(self, translation_response: str, expected_count: int) -> List[str]:

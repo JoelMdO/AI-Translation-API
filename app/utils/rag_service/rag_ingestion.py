@@ -9,8 +9,9 @@ import hashlib
 import httpx
 from typing import Any, Dict, List
 
+from utils.rag_service import query
 from config import CMS_RAG_URL, CMS_RAG_TOKEN, CHROMA_HOST, CHROMA_PORT
-from utils import rag_service
+from utils.rag_service import rag_service
 
 _CHROMA_BASE = f"http://{CHROMA_HOST}:{CHROMA_PORT}"
 
@@ -57,13 +58,17 @@ async def _upsert_chunks(col_id: str, chunks: List[str], article_id: str, langua
     upserted = 0
     for i, chunk in enumerate(chunks):
         doc_id = hashlib.md5(f"{article_id}_{i}".encode()).hexdigest()
-        embedding = await rag_service.embed(chunk)
+        embedding = await query.embed(chunk)
         if not embedding:
             continue
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
+                tenant, database = await query.get_v2_context()
+                if not tenant or not database:
+                    print("⚠️  Could not determine Chroma tenant/database for upsert")
+                    continue
                 resp = await client.post(
-                    f"{_CHROMA_BASE}/api/v1/collections/{col_id}/upsert",
+                    f"{_CHROMA_BASE}/api/v2/tenants/{tenant}/databases/{database}/collections/{col_id}/upsert",
                     json={  # type: ignore[arg-type]
                         "ids": [doc_id],
                         "embeddings": [embedding],

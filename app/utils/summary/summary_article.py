@@ -14,7 +14,7 @@ class SummaryUtils:
 
     def __init__(self):
         self.base_url = OLLAMA_BASE_URL
-        self.timeout = 60.0
+        self.timeout = 90.0
         self.model = OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL  # Fallback if env var is not set
     
     async def check_health(self) -> bool:
@@ -45,7 +45,7 @@ class SummaryUtils:
         try:
             print(f"DEBUG: Original article text: {title}")
             prompt = await create_prompt_summary(type="raw", text=body, target_language=language, title=title, body=body, section=None)
-            resume = await generate_translation(prompt=prompt, timeout=self.timeout, base_url=self.base_url)
+            resume = await generate_translation(prompt=prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3)
             print(f"DEBUG: Generated resume english: {resume}")
             print(f"DEBUG: Generated resume spanish: {resume}")
         except httpx.HTTPStatusError as e:

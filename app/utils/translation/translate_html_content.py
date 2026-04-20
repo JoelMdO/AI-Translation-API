@@ -7,6 +7,9 @@ from utils.translation.generate_translation import generate_translation
 from utils.translation.translate_html_utils import TranslateHTMLUtils
 from utils.translation.create_prompt_translation import create_prompt_translation
 from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL
+import logging
+
+logger = logging.getLogger(__name__)
 ##//TODO remove app before deploying 
 # from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
 
@@ -15,7 +18,7 @@ class TranslateHTMLContent:
 
     def __init__(self):
         self.base_url = OLLAMA_BASE_URL
-        self.timeout = 60.0
+        self.timeout = 120.0
         self.model = OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL  # Fallback if env var is not set
     
     async def translate_html_content(self, content: str, target_language: str) -> str: 
@@ -31,6 +34,7 @@ class TranslateHTMLContent:
             Translated HTML content with preserved structure
         """
         # Try new structured approach first
+        logger.info(f"DEBUG: Starting HTML translation with content: {content[:100]}... (type: {type(content)})")
         if not content or len(content.strip()) < 5:
             return content
         # Ensure base_url is configured and non-None for type-safety
@@ -43,66 +47,122 @@ class TranslateHTMLContent:
         assert isinstance(self.model, str)
     
         try:
-            print(f"DEBUG: Starting HTML translation with structure preservation")
-            chunks = TranslateHTMLUtils().split_html_into_chunks(content, max_chars=5000)
+            logger.info(f"DEBUG: Starting to get CHUNKS, HTML translation with structure preservation")
+            chunks: List[str] = TranslateHTMLUtils().split_html_into_chunks(content, max_tokens=300)
             translated_chunks: List[str] = []
             for i, chunk in enumerate(chunks):
+                logger.info("====================")
+                logger.info("Chunk %d: Processing chunk of length %d", i+1, len(chunk))
+                logger.info("Chunk %d: %s", i+1, chunk)
+                logger.info("====================")
                 try:
-                    # Extract plain text segments and a placeholder template that preserves the HTML structure
-                    text_segments, placeholder_template = TranslateHTMLUtils().extract_text_from_html(chunk)
-
+                    # Extract plain text segments and a structure map that preserves the HTML structure
+                    text_segments, structure_map = TranslateHTMLUtils().extract_text_with_structure(chunk)
+                    logger.info("Chunk %d: Extracted %d text segments for translation", i+1, len(text_segments))
                     if not text_segments:
                         translated_chunks.append(chunk)
                         continue
 
                     # Send only plain text (no HTML tags) to the LLM
                     text_to_translate = "---SEGMENT---".join(text_segments)
+                    logger.info("Chunk %d: Prepared text for translation (length: %d)", i+1, len(text_to_translate))
                     instructions = await create_prompt_translation(type="html", text=text_to_translate, target_language=target_language)
                     prompt = f"""{instructions}\n
+                    IMPORTANT: The text below contains segments separated by '---SEGMENT---'. You MUST preserve every '---SEGMENT---' separator exactly in your translated output. The number of '---SEGMENT---' separators in the output MUST match the number in the input. Translate each segment independently.
                     The text to translate is:
                     {text_to_translate}"""
 
-                    print(f"DEBUG: Generated prompt for translation of chunk {i+1}")
+                    logger.info("====================")
+                    logger.info("Chunk %d: Generated prompt for translation: %s", i+1, prompt)
+                    logger.info("====================")
 
-                    translated_response = await generate_translation(prompt, timeout=self.timeout, base_url=self.base_url)
-                    print("==="*40)
-                    print(f"DEBUG: Raw translation response: {translated_response}")
-                    print("==="*40)
+                    translated_response = await generate_translation(prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3)
+                    logger.info("Chunk %d: Raw translation response: %s", i+1, translated_response)
 
                     if not translated_response or len(translated_response.strip()) < 5:
-                        print(f"WARNING: Empty or invalid translation for chunk {i+1}")
+                        logger.warning("Chunk %d: Empty or invalid translation", i+1)
                         translated_chunks.append(chunk)
                         continue
 
                     # Split response back into segments and reconstruct HTML
                     translated_segments = [seg.strip() for seg in translated_response.split("---SEGMENT---")]
-
+                    logger.info("Chunk %d: Translated into %d segments", i+1, len(translated_segments))
                     if len(translated_segments) != len(text_segments):
-                        # Fallback: translate each segment individually to ensure counts match
+                        # Fallback: translate each segment individually to ensure counts match.
+                        # Each call is wrapped so a single failure uses the original segment
+                        # rather than aborting the entire chunk.
+                        logger.warning(
+                            "Chunk %d: Segment count mismatch (got %d, expected %d). "
+                            "Falling back to per-segment translation.",
+                            i+1, len(translated_segments), len(text_segments)
+                        )
                         translated_segments = []
-                        for segment in text_segments:
-                            individual_prompt = f"Translate this text to {target_language}: {segment}"
-                            translated_segment = await generate_translation(individual_prompt, timeout=self.timeout, base_url=self.base_url)
-                            translated_segments.append(translated_segment.strip())
+                        for seg_idx, segment in enumerate(text_segments):
+                            try:
+                                individual_prompt = f"Translate this text to {target_language}: {segment}"
+                                translated_segment = await generate_translation(
+                                    individual_prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3
+                                )
+                                translated_segments.append(translated_segment.strip()) #type: ignore
+                            except Exception as seg_error:
+                                logger.warning(
+                                    "Chunk %d, segment %d: translation failed (%s), keeping original.",
+                                    i+1, seg_idx+1, str(seg_error)
+                                )
+                                translated_segments.append(segment) #type: ignore
 
-                    reconstructed = TranslateHTMLUtils().reconstruct_html(translated_segments, placeholder_template)
+                    # Reconstruct using the structured mapper which handles fallback templates
+                    reconstructed = TranslateHTMLUtils().reconstruct_html_from_structure(translated_segments, structure_map)
                     translated_chunks.append(reconstructed)
 
                 except Exception as chunk_error:
-                    print(f"ERROR: Failed to translate chunk {i+1}: {str(chunk_error)}")
+                    logger.error("Chunk %d: Failed to translate chunk: %s", i+1, str(chunk_error))
                     translated_chunks.append(chunk)
                     continue
 
             result = "\n".join(translated_chunks)
-            print("==="*40)
-            print(f"DEBUG: Final translated HTML result: {result}")
-            print("==="*40)
+            logger.info("==================")
+            logger.info("Final translated HTML result: %s", result)
+            logger.info("==================")
             return result
 
         except Exception as e:
-            print(f"DEBUG: Error in structured translation: {e}. Falling back to old method.")
+            logger.error("Error in structured translation: %s. Falling back to old method.", str(e))
             return await self._translate_html_content_old_method(content, target_language)
 
+
+    async def translate_plain_text(self, text: str, target_language: str) -> str:
+        """
+        Translate a plain-text string (no HTML tags) using the LLM.
+        Used when a field has no HTML markup but another field in the same request does.
+
+        Args:
+            text: Plain text to translate
+            target_language: Target language for translation
+
+        Returns:
+            Translated plain text string
+        """
+        if not text or len(text.strip()) < 2:
+            return text
+        if self.base_url is None:
+            raise RuntimeError("OLLAMA_BASE_URL is not configured.")
+        assert isinstance(self.base_url, str)
+        if self.model is None:
+            raise RuntimeError("OLLAMA_MODEL is not configured.")
+        assert isinstance(self.model, str)
+
+        try:
+            instructions = await create_prompt_translation(type="html", text=text, target_language=target_language)
+            prompt = f"""{instructions}\nThe text to translate is:\n{text}"""
+            translated = await generate_translation(prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3)
+            if not translated or len(translated.strip()) < 2:
+                logger.warning("translate_plain_text: empty response, returning original")
+                return text
+            return translated.strip()
+        except Exception:
+            logger.exception("translate_plain_text failed, returning original text")
+            return text
 
     # OLD METHOD - PRESERVED FOR FALLBACK
     async def _translate_html_content_old_method(self, content: str, target_language: str) -> str:
@@ -123,7 +183,7 @@ class TranslateHTMLContent:
 
         # Create prompt for batch translation
         text_to_translate = "---SEGMENT---".join(text_segments)
-        print(f"DEBUG: OLD METHOD - text for translation: {text_to_translate}")
+        logger.info("OLD METHOD - text for translation: %s", text_to_translate)
         
         # OLD PROMPT - PRESERVED FOR REFERENCE
         # Create prompt for translation with numbered segments
@@ -131,11 +191,11 @@ class TranslateHTMLContent:
         prompt = f"""{instructions}\n
         The text to translate is:
         {text_to_translate}"""
-        # print(f"DEBUG: Generated prompt for translation: {prompt}")
-        translated_combined = await generate_translation(prompt, timeout=self.timeout, base_url=self.base_url)
+        # logger.info("Generated prompt for translation: %s", prompt)
+        translated_combined = await generate_translation(prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3)
         
         # OLD DEBUG - PRESERVED FOR REFERENCE
-        # print(f"DEBUG: Raw translation response: {translated_combined}")
+        # logger.info("Raw translation response: %s", translated_combined)
         
         # Split back into segments
         translated_segments = translated_combined.split("---SEGMENT---")
@@ -147,11 +207,11 @@ class TranslateHTMLContent:
             translated_segments: List[str] = []
             for segment in text_segments:
                 individual_prompt = f"Translate this text to {target_language}: {segment}"
-                translated_segment = await generate_translation(individual_prompt, timeout=self.timeout, base_url=self.base_url)
+                translated_segment = await generate_translation(individual_prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3)
                 translated_segments.append(translated_segment.strip())
         
         # Reconstruct HTML with translated text
-        print(f"DEBUG: OLD METHOD - HTML with translated content: {TranslateHTMLUtils().reconstruct_html(translated_segments, placeholder_template)}")
+        logger.info("OLD METHOD - HTML with translated content: %s", TranslateHTMLUtils().reconstruct_html(translated_segments, placeholder_template))
         return TranslateHTMLUtils().reconstruct_html(translated_segments, placeholder_template)
 
     async def translate_raw_content(self, text: str, title: str, body: str, section: str, target_language: str) -> str:
@@ -166,7 +226,7 @@ class TranslateHTMLContent:
         prompt = await create_prompt_translation(type="raw", text=text, target_language=target_language, title=title, body=body, section=section)
 
         raw_translation = await generate_translation(
-            prompt=prompt, timeout=self.timeout, base_url=self.base_url)
+            prompt=prompt, timeout=self.timeout, base_url=self.base_url, model=self.model, retries=3)
         return raw_translation
 # Global service instance
 translateHTMLContent = TranslateHTMLContent()

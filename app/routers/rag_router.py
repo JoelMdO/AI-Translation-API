@@ -9,27 +9,27 @@ from fastapi import APIRouter, Depends
 from schemas.testUser import GoogleUser
 from utils.auth import verify_google_access_token
 from utils.rag_service import rag_service
-from utils.rag_ingestion import ingest_all
+from utils.rag_service.rag_ingestion import ingest_all
 
 router = APIRouter(tags=["rag"])
 
 
 @router.get("/rag/status")
-async def rag_status():
+async def rag_status() -> dict[str, bool | dict[str, dict[str, int]]]:
     """Return ChromaDB health and per-language collection counts."""
     available = await rag_service.check_health()
     counts = {}
     if available:
         for lang in ("en", "es"):
             counts[lang] = {"count": await rag_service.collection_count(lang)}
-    return {
+    return { 
         "chroma_available": available,
         "collections": counts,
     }
 
 
 @router.post("/rag/ingest")
-async def rag_ingest(_user: GoogleUser = Depends(verify_google_access_token)):
+async def rag_ingest(_user: GoogleUser = Depends(verify_google_access_token)) -> dict[str, bool | str]:
     """
     Trigger a full re-ingestion of articles from the CMS into ChromaDB.
     Requires a valid Google OAuth bearer token.

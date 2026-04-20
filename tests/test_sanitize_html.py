@@ -11,8 +11,18 @@ def test_sanitize_html_removes_scripts_and_event_handlers():
 
 
 def test_sanitize_html_keeps_safe_structure():
-    raw = '<section><h1>Title</h1><p>Text</p></section>'
+    # <section> is not in the allowlist; only allowed tags must pass through unchanged.
+    raw = '<div><h1>Title</h1><p>Text</p></div>'
     assert sanitize_html(raw) == raw
+
+
+def test_sanitize_html_strips_disallowed_tags_preserves_content():
+    # <section> and <article> are not in the allowlist — tags are stripped, content preserved.
+    raw = '<section><h1>Title</h1><p>Text</p></section>'
+    cleaned = sanitize_html(raw)
+    assert '<section' not in cleaned
+    assert '<h1>Title</h1>' in cleaned
+    assert '<p>Text</p>' in cleaned
 
 
 # ---------------------------------------------------------------------------

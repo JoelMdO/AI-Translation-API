@@ -2,6 +2,8 @@
 
 """
 from typing import List, Dict
+import logging
+logger = logging.getLogger(__name__)
 # from utils.load_vocabulary import get_style_rules
 
 def format_context(passages: List[str], vocabulary: Dict[str, str], abbreviations: Dict[str, str], language: str) -> str:
@@ -33,5 +35,6 @@ def format_context(passages: List[str], vocabulary: Dict[str, str], abbreviation
 
     header = "=== Style Reference (use this to guide tone and terminology) ==="
     footer = "=== End of Style Reference ==="
+    logger.info("DEBUG: format Context %s", f"{header}\n" + "\n\n".join(parts) + f"\n{footer}")
     return f"{header}\n" + "\n\n".join(parts) + f"\n{footer}"
 

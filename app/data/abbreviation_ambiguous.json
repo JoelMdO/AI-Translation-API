@@ -1,0 +1,92 @@
+[
+  {
+    "index": 0,
+    "original": {
+      "abbreviation": "A/A",
+      "english": "Air/air",
+      "spanish": "Aire a aire"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 68,
+    "original": {
+      "abbreviation": "A/G",
+      "english": "Air to ground",
+      "spanish": "Aire a tierra"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 269,
+    "original": {
+      "abbreviation": "Aviation",
+      "english": "Arreglo de colaboración para la prevención y gestión de sucesos de salud pública en la aviación",
+      "spanish": "civil"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 533,
+    "original": {
+      "abbreviation": "Combustible remanente",
+      "english": "F&R",
+      "spanish": "Finding and recommendation"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 857,
+    "original": {
+      "abbreviation": "Radar meteorológico de próxima generación",
+      "english": "NextGen",
+      "spanish": "Next Generation Air Transportation System"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 878,
+    "original": {
+      "abbreviation": "Dirección noroeste",
+      "english": "O&D",
+      "spanish": "Grupo de expertos de estadísticas de origen y destino"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 879,
+    "original": {
+      "abbreviation": "Panel on Origin and Destination Statistics",
+      "english": "O.R.",
+      "spanish": "Operational requirement"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 880,
+    "original": {
+      "abbreviation": "Requisito Operacional",
+      "english": "O/R",
+      "spanish": "On request"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 972,
+    "original": {
+      "abbreviation": "Personas a bordo",
+      "english": "PoC",
+      "spanish": "Point of contact"
+    },
+    "note": "No clear acronym candidate found"
+  },
+  {
+    "index": 1462,
+    "original": {
+      "abbreviation": "Zona amarilla de precaución",
+      "english": "Zulu (Greenwich mean time)",
+      "spanish": "Zulú (hora media de Greenwich)"
+    },
+    "note": "No clear acronym candidate found"
+  }
+]

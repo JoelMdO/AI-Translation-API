@@ -8,12 +8,15 @@ from utils.sanitize_text import sanitize_text
 from utils.translation.translate_html_content import translateHTMLContent
 from schemas.translation import TranslationRequest, TranslationResponse
 import re
-from config import OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL
+import logging
+
+logger = logging.getLogger(__name__)
+
 ##//TODO remove app before deploying 
+# from app.config import OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL
 # from app.utils.sanitize_html import sanitize_html
-# from app.utils.ollama_services import ollama_service
 # from app.utils.sanitize_text import sanitize_text
-# from app.utils.create_prompt_translation import create_prompt_translation
+# from app.utils.translation.translate_html_content import translateHTMLContent
 # from app.schemas.translation import TranslationRequest, TranslationResponse
 
 
@@ -29,25 +32,66 @@ class TranslationService:
         # falling back to the model field in the request so the value is consistent
         # across both success and failure response paths.
         model_used: str = OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL or request.model
+        logger.info("Translation request received with model: %s", model_used)
         try:
-            has_html = any('<' in text and '>' in text for text in [request.title, request.body, request.section])
-            if has_html:
-                # If HTML, translate each field separately (Ollama likely needs to preserve tags)
-                translated_title = await translateHTMLContent.translate_html_content(
-                    content=request.title, target_language=request.target_language
-                )
-                translated_body = await translateHTMLContent.translate_html_content(
-                    content=request.body, target_language=request.target_language
-                )
-                translated_section = await translateHTMLContent.translate_html_content(
-                    content=request.section, target_language=request.target_language
-                )
-                # Sanitize only for malicious content, not for structure
-                translated_title = sanitize_html(translated_title)
-                translated_body = sanitize_html(translated_body)
-                translated_section = sanitize_html(translated_section)
+            title_has_html = '<' in request.title and '>' in request.title
+            logger.info("Title has HTML: %s", title_has_html)
+            body_has_html  = '<' in request.body  and '>' in request.body
+            logger.info("Body has HTML: %s", body_has_html)
+            section_has_html = '<' in request.section and '>' in request.section
+            logger.info("Section has HTML: %s", section_has_html)
+            any_has_html = title_has_html or body_has_html or section_has_html
+            logger.info("Translation request received. title_has_html=%s body_has_html=%s section_has_html=%s",
+                    title_has_html, body_has_html, section_has_html)
+            if any_has_html:
+                # Per-field routing: HTML fields use HTML translation, plain-text fields use plain translation
+                if title_has_html:
+                    translated_title = sanitize_html(
+                        await translateHTMLContent.translate_html_content(
+                            content=request.title, target_language=request.target_language
+                        )
+                    )
+                else:
+                    translated_title = sanitize_text(
+                        await translateHTMLContent.translate_plain_text(
+                            text=request.title, target_language=request.target_language
+                        )
+                    )
+
+                if body_has_html:
+                    logger.info("Translating body with HTML preservation")
+                    translated_body = sanitize_html(
+                        await translateHTMLContent.translate_html_content(
+                            content=request.body, target_language=request.target_language
+                        )
+                    )
+                else:
+                    logger.info("Translating body as plain text")
+                    translated_body = sanitize_text(
+                        await translateHTMLContent.translate_plain_text(
+                            text=request.body, target_language=request.target_language
+                        )
+                    )
+
+                if section_has_html:
+                    translated_section = sanitize_html(
+                        await translateHTMLContent.translate_html_content(
+                            content=request.section, target_language=request.target_language
+                        )
+                    )
+                else:
+                    translated_section = sanitize_text(
+                        await translateHTMLContent.translate_plain_text(
+                            text=request.section, target_language=request.target_language
+                        )
+                    )
+
+                logger.info("Translated title length: %d", len(translated_title or ""))
+                logger.info("Translated body length: %d", len(translated_body or ""))
+                logger.info("Translated section length: %d", len(translated_section or ""))
             else:
                 # For plain text, sanitize and combine into a single prompt for one Ollama call
+                logger.info("No HTML detected in any field; using single translation call for efficiency")
                 sanitized_title = sanitize_text(request.title)
                 sanitized_body = sanitize_text(request.body)
                 sanitized_section = sanitize_text(request.section)
@@ -63,19 +107,32 @@ class TranslationService:
                     section=sanitized_section,
                     target_language=sanitized_target_language,
                 )
-                print(f"DEBUG: Raw translation response: {raw_translation}")
+                logger.info("Raw translation response: %s", raw_translation)
                 # Try to parse the response into fields (assuming format: Título: ... Cuerpo: ... Sección: ...)
                 sanitized = sanitize_text(raw_translation)
                 translated_title, translated_body, translated_section = None, None, None
                 try:
-                    title_match = re.search(r'T[ií]tulo:([^\n]*)', sanitized, re.IGNORECASE)
-                    body_match = re.search(r'Cuerpo:([^\n]*)', sanitized, re.IGNORECASE)
-                    section_match = re.search(r'Secci[oó]n:([^\n]*)', sanitized, re.IGNORECASE)
+                    # Support multi-line fields by using DOTALL and non-greedy matches
+                    title_match = re.search(
+                        r"T[ií]tulo:\s*(.*?)(?=Cuerpo:|Secci[oó]n:|$)",
+                        sanitized,
+                        re.IGNORECASE | re.DOTALL,
+                    )
+                    body_match = re.search(
+                        r"Cuerpo:\s*(.*?)(?=Secci[oó]n:|$)",
+                        sanitized,
+                        re.IGNORECASE | re.DOTALL,
+                    )
+                    section_match = re.search(
+                        r"Secci[oó]n:\s*(.*)$",
+                        sanitized,
+                        re.IGNORECASE | re.DOTALL,
+                    )
                     translated_title = title_match.group(1).strip() if title_match else ''
                     translated_body = body_match.group(1).strip() if body_match else ''
                     translated_section = section_match.group(1).strip() if section_match else ''
-                except Exception as e:
-                    print(f"DEBUG: Parsing failed with error: {e}")
+                except Exception:
+                    logger.exception("Parsing raw translation failed; falling back to whole text")
                     translated_title = sanitized
                     translated_body = ''
                     translated_section = ''
@@ -83,12 +140,9 @@ class TranslationService:
                 translated_title = sanitize_text(translated_title)
                 translated_body = sanitize_text(translated_body)
                 translated_section = sanitize_text(translated_section)
-            print("==="*40)
-            print(f"DEBUG: BEFORE RETURN TO CRM, Final translated fields")
-            print(f"DEBUG- Title: {translated_title}, ")
-            print(f"DEBUG- Body: {translated_body}, ")
-            print(f"DEBUG- Section: {translated_section}")
-            print("==="*40)
+            logger.info("Final translated fields -- Title: %s", translated_title)
+            logger.info("Final translated fields -- Body length: %d", len(translated_body or ""))
+            logger.info("Final translated fields -- Section: %s", translated_section)
 
             # Return a real dict for translated_text
             return TranslationResponse(
@@ -101,6 +155,7 @@ class TranslationService:
                 model_used=model_used
             )
         except Exception:
+            logger.exception("Translation failed for request: %s", request)
             return TranslationResponse(
                 translated_text={
                     "title": "",

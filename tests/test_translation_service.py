@@ -2,6 +2,7 @@ import pytest
 from app.schemas.translation import TranslationRequest
 from app.services.translation import translation_service
 import app.utils.translation.translate_html_content as thc
+from tests import test_translation_service as article
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -11,7 +12,7 @@ PLAIN_REQ = TranslationRequest(
     title="Hello", body="Some body text.", section="Intro section", target_language="Spanish"
 )
 HTML_REQ = TranslationRequest(
-    title="<b>Hello</b>", body="<p>Body paragraph</p>", section="<em>Intro</em>",
+    title="<b>Hello</b>", body=str(article), section="<em>Intro</em>",
     target_language="Spanish"
 )
 
