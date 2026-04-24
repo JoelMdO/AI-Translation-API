@@ -9,6 +9,13 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install NLTK data (punkt tokenizer)
+RUN python -m nltk.downloader punkt
+
+# Pre-cache the embedding model at image build time
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+            SentenceTransformer('BAAI/bge-m3')"
+
 # Copy application code
 COPY . .
 

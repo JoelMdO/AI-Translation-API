@@ -1,13 +1,50 @@
+# --- Web framework & API ---
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
-debugpy==1.8.14
 pydantic==2.9.2
+pydantic-settings==2.3.0        # env-driven config
+debugpy==1.8.14
 python-dotenv==1.0.1
-httpx==0.27.2
 python-multipart==0.0.12
 google-auth==2.25.2
 google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
 PyJWT==2.8.0
 beautifulsoup4==4.12.3
-chromadb>=0.5.0
+
+# --- HTML parsing (article body cleaning) ---
+beautifulsoup4==4.12.3
+lxml==5.2.1                     # faster BS4 parser
+
+# --- Text preprocessing & chunking ---
+nltk==3.8.1                     # sentence tokenizer
+spacy==3.7.4                    # optional: better sentence boundary detection
+langdetect==1.0.9               # verify input is English before translating
+tiktoken==0.7.0                 # token counting (matches LLM tokenizer)
+
+# --- Embeddings (BGE-M3) ---
+sentence-transformers==3.0.1
+torch==2.3.0                    # CPU build is fine; use torch+cu121 for GPU
+transformers==4.41.1
+huggingface-hub==0.23.2
+
+# --- Vector database (Qdrant) ---
+qdrant-client==1.9.1
+
+# --- Embedding cache ---
+redis==5.0.4
+hiredis==2.3.2                  # C-accelerated Redis parser
+
+# --- Cross-encoder reranker (optional but recommended) ---
+# Already covered by sentence-transformers above
+
+# --- LLM client (Ollama) ---
+ollama==0.2.1                   # official Python SDK
+httpx==0.27.2                   # async HTTP fallback
+
+# --- Data validation & serialisation ---
+orjson==3.10.3                  # fast JSON for Qdrant payloads
+
+# --- Observability ---
+structlog==24.2.0               # structured logging
+prometheus-client==0.20.0       # metrics endpoint

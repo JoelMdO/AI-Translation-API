@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 from schemas.testUser import GoogleUser
 from utils.auth import verify_google_access_token
 from utils.rag_service import rag_service
-from utils.rag_service.rag_ingestion import ingest_all
+from API.app.utils.rag_service.ingestion.ingest_vocabulary import ingest_all
 
 router = APIRouter(tags=["rag"])
 

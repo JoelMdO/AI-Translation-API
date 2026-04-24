@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from schemas.translation import HealthResponse
 from utils.translation.translate_html_utils import translateHTML_utils as ollama_service
 from utils.rag_service import rag_service
-from utils.rag_service.rag_ingestion import ingest_all, is_populated
+from API.app.utils.rag_service.ingestion.ingest_vocabulary import ingest_all, is_populated
 from utils.translation.generate_translation import generate_translation
 from config import OLLAMA_BASE_URL
 from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
