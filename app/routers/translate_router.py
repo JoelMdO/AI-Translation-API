@@ -32,10 +32,6 @@ from schemas.testUser import GoogleUser
 import logging
 logger = logging.getLogger(__name__)
 
-# from app.schemas.translation import TranslationRequest, TranslationResponse
-# from app.services.translation import translation_service
-# from app.utils.auth import verify_user_access
-# from app.schemas.testUser import GoogleUser
 
 router = APIRouter()
 

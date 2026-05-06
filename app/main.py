@@ -9,8 +9,8 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from schemas.translation import HealthResponse
 from utils.translation.translate_html_utils import translateHTML_utils as ollama_service
-from utils.rag_service import rag_service
-from utils.rag_service.rag_ingestion import ingest_all, is_populated
+# from utils.rag_service import rag_service
+# from utils.rag_service.rag_ingestion import ingest_all, is_populated
 from utils.translation.generate_translation import generate_translation
 from config import OLLAMA_BASE_URL
 from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
@@ -27,14 +27,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-##//TODO remove the app. before deploying 
-# from app.schemas.translation import HealthResponse
-# from app.utils.translation.translate_html_utils import translateHTML_utils as ollama_service
-# from app.utils.rag_service import rag_service
-# from app.utils.rag_ingestion import ingest_all, is_populated
-# from app.config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
-# from app.routers import resume_router, translate_router
-# from app.routers import rag_router
+
 
 if not ALLOWED_ORIGINS:
     raise ValueError("ALLOWED_ORIGINS environment variable is not set. Please define it in your .env file.")
@@ -62,18 +55,18 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Warmup request failed: %s", str(e))
 
-    # Startup: Check ChromaDB and auto-ingest if collections are empty
-    if not await rag_service.check_health():
-        logger.warning("⚠️  ChromaDB is not accessible — RAG enrichment disabled")
-    else:
-        logger.info("✅ Connected to ChromaDB successfully!")
-        en_populated = await is_populated("en")
-        es_populated = await is_populated("es")
-        if not en_populated or not es_populated:
-            logger.info("🔄 ChromaDB collections empty — starting RAG ingestion from CMS...")
-            await ingest_all()
-        else:
-            logger.info("✅ ChromaDB collections already populated — skipping ingestion")
+    # # Startup: Check ChromaDB and auto-ingest if collections are empty
+    # if not await rag_service.check_health():
+    #     logger.warning("⚠️  ChromaDB is not accessible — RAG enrichment disabled")
+    # else:
+    #     logger.info("✅ Connected to ChromaDB successfully!")
+    #     en_populated = await is_populated("en")
+    #     es_populated = await is_populated("es")
+    #     if not en_populated or not es_populated:
+    #         logger.info("🔄 ChromaDB collections empty — starting RAG ingestion from CMS...")
+    #         await ingest_all()
+    #     else:
+    #         logger.info("✅ ChromaDB collections already populated — skipping ingestion")
     
     yield
     
@@ -111,13 +104,14 @@ async def health_check():
     Verifies API is running and Ollama service is accessible
     """
     ollama_healthy = await ollama_service.check_health()
-    chroma_healthy = await rag_service.check_health()
+    # chroma_healthy = await rag_service.check_health()
     status: str = "healthy"
 
-    if ollama_healthy and chroma_healthy:
+    # if ollama_healthy and chroma_healthy:
+    if ollama_healthy:
         status = "healthy"
-    elif not ollama_healthy and not chroma_healthy:
-        status = "unhealthy - Ollama and ChromaDB unreachable"
+    # elif not ollama_healthy and not chroma_healthy:
+    #     status = "unhealthy - Ollama and ChromaDB unreachable"
     elif not ollama_healthy:
         status = "unhealthy - Ollama unreachable"
     else:        
@@ -126,7 +120,7 @@ async def health_check():
     return HealthResponse(
         status=status,
         ollama_connected=ollama_healthy,
-        chroma_connected=chroma_healthy,
+        # chroma_connected=chroma_healthy,
         api_version="1.0.0"
     )
 

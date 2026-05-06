@@ -26,6 +26,16 @@ async def generate_translation(prompt: str, timeout: float, base_url: str, model
                 logger.info("Ollama response status=%s body=%s", response.status_code, (response.text or '')[:1000])
                 response.raise_for_status()
 
+                """
+                PURPOSE:
+                ---------
+                Extract the generated text from the Ollama API response. 
+                Ollama's response format can vary based on the model and configuration, 
+                but we need to extract the generated text from the response. 
+                The logic checks multiple possible fields and structures in the JSON 
+                response to find the translated text. This ensures compatibility with different Ollama versions and models, 
+                and provides a fallback mechanism if the expected fields are not present.
+                """
                 try:
                     data = response.json()
                 except ValueError:
@@ -33,11 +43,13 @@ async def generate_translation(prompt: str, timeout: float, base_url: str, model
 
                 if isinstance(data, dict):
                     if "response" in data and isinstance(data["response"], str):
+                        logging.info("Type DATA RESPONSE from Ollama")
                         return data["response"].strip()
 
                     if "choices" in data and isinstance(data["choices"], list) and data["choices"]:
                         first = data["choices"][0] #type: ignore
                         if isinstance(first, dict) and "text" in first and isinstance(first["text"], str):
+                            logging.info("Type DATA CHOICES from Ollama")
                             return first["text"].strip()
 
                     if "data" in data and isinstance(data["data"], list):
@@ -45,10 +57,12 @@ async def generate_translation(prompt: str, timeout: float, base_url: str, model
                             if isinstance(item, dict) and "content" in item:
                                 for c in item["content"]: #type: ignore
                                     if isinstance(c, dict) and c.get("type") == "output_text" and "text" in c: #type: ignore
+                                        logging.info("Type DATA CONTENT from Ollama")
                                         return c["text"].strip() #type: ignore
 
                     for key in ("text", "result"):
                         if key in data and isinstance(data[key], str):
+                            logging.info("Type DATA KEY from Ollama: %s", key)
                             return data[key].strip() #type: ignore
 
                 def _find_text(obj): # type: ignore
