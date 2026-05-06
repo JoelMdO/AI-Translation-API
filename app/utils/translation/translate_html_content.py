@@ -58,7 +58,8 @@ class TranslateHTMLContent:
                 try:
                     # Extract plain text segments and a structure map that preserves the HTML structure
                     text_segments, structure_map = TranslateHTMLUtils().extract_text_with_structure(chunk)
-                    logger.info("Chunk %d: Extracted %d text segments for translation", i+1, len(text_segments))
+                    logger.info("Extracted text segments for translation %s", text_segments)
+                    logger.info("Extracted structure map for translation %s", structure_map)
                     if not text_segments:
                         translated_chunks.append(chunk)
                         continue
@@ -66,11 +67,8 @@ class TranslateHTMLContent:
                     # Send only plain text (no HTML tags) to the LLM
                     text_to_translate = "---SEGMENT---".join(text_segments)
                     logger.info("Chunk %d: Prepared text for translation (length: %d)", i+1, len(text_to_translate))
-                    instructions = await create_prompt_translation(type="html", text=text_to_translate, target_language=target_language)
-                    prompt = f"""{instructions}\n
-                    IMPORTANT: The text below contains segments separated by '---SEGMENT---'. You MUST preserve every '---SEGMENT---' separator exactly in your translated output. The number of '---SEGMENT---' separators in the output MUST match the number in the input. Translate each segment independently.
-                    The text to translate is:
-                    {text_to_translate}"""
+                    prompt = await create_prompt_translation(type="html", text=text_to_translate, target_language=target_language)
+                   
 
                     logger.info("====================")
                     logger.info("Chunk %d: Generated prompt for translation: %s", i+1, prompt)
@@ -84,11 +82,13 @@ class TranslateHTMLContent:
                         translated_chunks.append(chunk)
                         continue
 
+                    # =================================
                     # Split response back into segments and reconstruct HTML
+                    # =================================
                     translated_segments = [seg.strip() for seg in translated_response.split("---SEGMENT---")]
                     logger.info("Chunk %d: Translated into %d segments", i+1, len(translated_segments))
                     if len(translated_segments) != len(text_segments):
-                        # Fallback: translate each segment individually to ensure counts match.
+                        # Fallback: If LLM does not preserve structure, will translate each segment individually to ensure counts match.
                         # Each call is wrapped so a single failure uses the original segment
                         # rather than aborting the entire chunk.
                         logger.warning(
