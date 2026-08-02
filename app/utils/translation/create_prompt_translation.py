@@ -54,7 +54,9 @@ async def create_prompt_translation(type: str, text: str, target_language: str, 
 # - Do not return any context array numbers.
 # {"- Return the translation in this exact format: # Título: [translated title] # Cuerpo: [translated body] # Sección: [translated section] Title: {title} Body: {body} Sección: {section}" if type == "raw" else ""}
 # """
-        prompt = f"""You are an AI specialized in translating to {target_language}, accordingly translate the below text by following the next list of rules:
+    style_rules = style_rules or ""
+
+    prompt = f"""You are an AI specialized in translating to {target_language}, accordingly translate the below text by following the next list of rules:
                     Rules:{style_rules}
 -Translate the following text segments to {target_language}. 
 - Use only one translation, no alternatives or explanations.
@@ -68,5 +70,5 @@ async def create_prompt_translation(type: str, text: str, target_language: str, 
 IMPORTANT: The text below contains segments separated by '---SEGMENT---'. You MUST preserve every '---SEGMENT---' separator exactly in your translated output. The number of '---SEGMENT---' separators in the output MUST match the number in the input. Translate each segment independently.
 The text to translate is:{text}
 """
-        
+
     return prompt #type: ignore
