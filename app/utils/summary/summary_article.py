@@ -51,8 +51,7 @@ class SummaryUtils:
         except httpx.HTTPStatusError as e:
             raise Exception(f"Ollama API error: {e.response.status_code} - {e.response.text}")
         except Exception as e:
-            # Optionally log the error here
-            print(f"DEBUG: Error occurred while generating resume: {str(e)}")
+            raise Exception("Summary generation failed.") from e
         return resume
 
 # Global service instance
