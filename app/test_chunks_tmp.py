@@ -6,7 +6,7 @@ from utils.sanitize_html import sanitize_html
 
 # Test 1: split_html_into_chunks keeps all tag types
 html = '<div><p>Para one.</p><blockquote>A quote.</blockquote><ol><li>Item A</li></ol><h2>Heading.</h2><hr/><p>Last.</p></div>'
-chunks = TranslateHTMLUtils().split_html_into_chunks(html, max_chars=5000)
+chunks = TranslateHTMLUtils().split_html_into_chunks(html, max_tokens=5000)
 full = ' '.join(chunks)
 print("blockquote present:", 'A quote.' in full)
 print("ol/li present:", 'Item A' in full)

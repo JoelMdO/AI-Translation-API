@@ -1,6 +1,7 @@
 import pytest
 
 from app.utils.translation.translate_html_utils import TranslateHTMLUtils
+import app.utils.translation.translate_html_utils as html_utils_mod
 
 
 def test_extract_and_reconstruct_structure_basic():
@@ -23,16 +24,18 @@ def test_extract_and_reconstruct_structure_basic():
 
 
 def test_fallback_old_template_used_when_structure_fails(monkeypatch):
-    # Force extract_text_with_structure to raise and exercise fallback to old template
+    # Patch BeautifulSoup inside the module so the method's internal try/except
+    # fallback path runs, rather than patching the method itself.
     html = "<div><div><p>The new Slot coordinator</p></div></div>"
     utils = TranslateHTMLUtils()
 
-    def fake_extract(html_content):
+    def failing_bs(html_content, parser):
         raise Exception("boom")
 
-    monkeypatch.setattr(utils, "extract_text_with_structure", fake_extract)
+    monkeypatch.setattr(html_utils_mod, 'BeautifulSoup', failing_bs)
 
-    # Now call and ensure fallback still returns text segments and a structure_map of fallback type
+    # extract_text_with_structure should catch the BeautifulSoup failure and
+    # fall back to the regex-based old method, returning a 'fallback' structure_map.
     text_segments, structure_map = utils.extract_text_with_structure(html)
     assert isinstance(text_segments, list)
     assert structure_map.get("type") == "fallback"
