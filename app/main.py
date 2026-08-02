@@ -4,7 +4,6 @@ Simple translation API that validates Google tokens and calls Ollama for transla
 Simple translation API that validates Google tokens and calls Ollama for translation
 """
 from fastapi import FastAPI
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from schemas.translation import HealthResponse
