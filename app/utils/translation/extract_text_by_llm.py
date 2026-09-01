@@ -113,7 +113,13 @@ class ExtractTextByLlm:
                         "prompt": prompt,
                         "stream": False,
                         "temperature": 0.3,
-                    logger.info("Ollama request: model=%s timeout=%.1f", use_model, self.timeout)
+                        "keep_alive": "-1m",
+                    }
+                    logger.info("Ollama request: model=%s timeout=%.1f attempt=%d", use_model)
+                    response = await client.post(request_url, json=payload)  # type: ignore
+                    logger.info("Ollama response status=%s body=%s", response.status_code, (response.text or '')[:1000])
+                    response.raise_for_status()
+                    return response.json()["response"]
             except httpx.RequestError as e:
                 logger.exception(
                     "Ollama request error: url=%s type=%s detail=%r",
