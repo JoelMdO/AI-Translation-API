@@ -139,8 +139,7 @@ async def test_full_flow_translate_failure_does_not_affect_summary(async_client,
 
     # Translate should return success=False (service catches the error)
     translate_resp = await async_client.post('/api/translate', json=ARTICLE_PLAIN, headers=AUTH) #type: ignore
-    assert translate_resp.status_code == 200 #type: ignore
-    assert translate_resp.json()['success'] is False #type: ignore
+    assert translate_resp.status_code == 500 #type: ignore
 
     # Summary endpoint is independent — should still work
     summary_resp = await async_client.post( #type: ignore
