@@ -52,26 +52,23 @@ class RegenerateArticle:
         self.index = 0
         try:
             for segment in translated_segments:
-                if segment["tag"] in BLOCK_TAGS or segment["tag"] in INLINE_TAGS:
-                    tag = segment["tag"]
-                    text = segment["text"]
-                    html_part = f"<{tag}>{text}</{tag}>"
-                    html_parts[self.index] = html_part
-                    self.index += 1
-                if segment["tag"] not in BLOCK_TAGS and segment["tag"] not in INLINE_TAGS and segment["tag"] not in ANCHOR_TAGS :
-                    tag = segment["tag"]
-                    src = segment.get("src", "")
-                    alt = segment.get("alt", "")
-                    html_part = f'<{tag} src="{src}" alt="{alt}" />'
-                    html_parts[self.index] = html_part
-                    self.index += 1
-                if segment["tag"] not in BLOCK_TAGS and segment["tag"] not in INLINE_TAGS and segment["tag"] not in IMAGE_TAGS :
-                    tag = segment["tag"]
-                    text = segment["text"]
-                    href = segment.get("href", "")
-                    html_part = f'<{tag} href="{href}">{text}</{tag}>'
-                    html_parts[self.index] = html_part
-                    self.index += 1
+                tag = (segment.get("tag") or "").lower()
+
+                if tag in IMAGE_TAGS:
+                    src = segment.get("src") or ""
+                    alt = segment.get("alt") or ""
+                    html_parts[self.index] = f'<img src="{src}" alt="{alt}" />'
+                elif tag in ANCHOR_TAGS:
+                    href = segment.get("href") or ""
+                    text = segment.get("text") or ""
+                    html_parts[self.index] = f'<a href="{href}">{text}</a>'
+                elif tag == "hr":
+                    html_parts[self.index] = "<hr />"
+                elif tag:
+                    text = segment.get("text") or ""
+                    html_parts[self.index] = f"<{tag}>{text}</{tag}>"
+
+                self.index += 1
 
             print(f"DEBUG: Reconstructed HTML: {html_parts}")
             return ''.join(html_parts.values())
