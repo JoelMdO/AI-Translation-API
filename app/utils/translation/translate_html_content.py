@@ -42,7 +42,8 @@ class TranslateHTMLContent:
             print(f"DEBUG EXTRACTED JSON: Extracted text segments for translation: {text_segments}")
             translated_segments: List[dict[str, str]] = []
             for text in text_segments:
-                if text["tag"] in {"hr", "figure", "img", "figcaption", "a"}:
+                tag = text.get("tag")
+                if tag in {"hr", "figure", "img", "figcaption"} or "text" not in text:
                     print(f"DEBUG: For STRUCTURAL TAG: Preserving HTML segment {text})")
                     translated_segments.append(text)
                     continue
