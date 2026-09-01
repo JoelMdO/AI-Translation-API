@@ -22,11 +22,7 @@ class TranslationService:
         Process translation request with HTML content preservation
         Returns an object with translated fields, avoids multiple Ollama calls if possible.
         """
-        # Determine the model that will actually be used: env vars take precedence,
-        # falling back to the model field in the request so the value is consistent
-        # across both success and failure response paths.
-        model_used: str = OLLAMA_DEFAULT_MODEL or "llama3.2"
-        logger.info("Translation request received with model: %s", model_used)
+        model_used: str = OLLAMA_DEFAULT_MODEL or request.model or "llama3.2"
         print(f"====/// STARTING TRANSLATION SERVICE ///====")
         try:
             title_has_html = '<' in request.title and '>' in request.title
