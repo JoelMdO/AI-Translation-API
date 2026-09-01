@@ -16,6 +16,7 @@ if APP_PATH not in sys.path:
 os.environ.setdefault('DEV_MODE', 'true')
 os.environ.setdefault('ALLOWED_ORIGINS', '["*"]')
 os.environ.setdefault('OLLAMA_DEFAULT_MODEL', 'test-model')
+os.environ.setdefault('OLLAMA_BASE_URL', 'http://localhost:11434')
 
 import pytest
 from httpx import AsyncClient, ASGITransport

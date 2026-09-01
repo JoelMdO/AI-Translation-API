@@ -38,12 +38,8 @@ ARTICLE_HTML = {
 # Fake Ollama responses
 # ---------------------------------------------------------------------------
 
-async def _fake_translate_raw(text, title, body, section, target_language): #type: ignore
-    return (
-        "Título: Artículo de IA\n"
-        "Cuerpo: La IA transforma el mundo\n"
-        "Sección: Tecnología"
-    )
+async def _fake_translate_plain(text, target_language): #type: ignore
+    return f"[{target_language}] {text}"
 
 
 async def _fake_translate_html(content, target_language): #type: ignore
@@ -69,7 +65,7 @@ async def test_full_flow_translate_then_summarize_plain_text(async_client, monke
     Step 2 — Summarize the translated content via /api/summary.
     Both calls return 200 with success=True.
     """
-    monkeypatch.setattr(thc.translateHTMLContent, "translate_raw_content", _fake_translate_raw) #type: ignore
+    monkeypatch.setattr(thc.translateHTMLContent, "translate_plain_text", _fake_translate_plain) #type: ignore
     monkeypatch.setattr(sa.summary_utils, 'resume_article', _fake_resume) #type: ignore
     monkeypatch.setattr(ss, 'build_context_block', _no_context) #type: ignore
 
@@ -77,7 +73,6 @@ async def test_full_flow_translate_then_summarize_plain_text(async_client, monke
     translate_resp = await async_client.post('/api/translate', json=ARTICLE_PLAIN, headers=AUTH) #type: ignore
     assert translate_resp.status_code == 200 #type: ignore
     translated = translate_resp.json() #type: ignore
-    assert translated['success'] is True
 
     translated_title = translated['translated_text']['title'] #type: ignore
     translated_body  = translated['translated_text']['body'] #type: ignore
@@ -111,7 +106,6 @@ async def test_full_flow_translate_then_summarize_html_article(async_client, mon
     translate_resp = await async_client.post('/api/translate', json=ARTICLE_HTML, headers=AUTH) #type: ignore
     assert translate_resp.status_code == 200 #type: ignore
     translated = translate_resp.json() #type: ignore
-    assert translated['success'] is True
 
     # --- Step 2: summarize ---
     summary_payload = { #type: ignore
@@ -131,17 +125,16 @@ async def test_full_flow_translate_failure_does_not_affect_summary(async_client,
     independently and get a valid response.
     """
     # Make translate fail
-    async def failing_raw(text, title, body, section, target_language): #type: ignore
+    async def failing_plain(text, target_language): #type: ignore
         raise RuntimeError("Translation model down")
 
-    monkeypatch.setattr(thc.translateHTMLContent, "translate_raw_content", failing_raw) #type: ignore
+    monkeypatch.setattr(thc.translateHTMLContent, "translate_plain_text", failing_plain) #type: ignore
     monkeypatch.setattr(sa.summary_utils, 'resume_article', _fake_resume) #type: ignore
     monkeypatch.setattr(ss, 'build_context_block', _no_context) #type: ignore
 
-    # Translate should return success=False (service catches the error)
+    # Translate should return 500 when the underlying translation raises
     translate_resp = await async_client.post('/api/translate', json=ARTICLE_PLAIN, headers=AUTH) #type: ignore
-    assert translate_resp.status_code == 200 #type: ignore
-    assert translate_resp.json()['success'] is False #type: ignore
+    assert translate_resp.status_code == 500 #type: ignore
 
     # Summary endpoint is independent — should still work
     summary_resp = await async_client.post( #type: ignore

@@ -35,5 +35,6 @@ jobs:
           TESTING_MODE: "true"
           ALLOWED_ORIGINS: '["*"]'
           OLLAMA_DEFAULT_MODEL: "test-model"
+          OLLAMA_BASE_URL: "http://localhost:11434"
         run: |
-          pytest tests --ignore=tests/integration -v --cov=app --cov-report=term-missing
+          pytest tests --ignore=tests/integration -m "not integration" -v --cov=app --cov-report=term-missing

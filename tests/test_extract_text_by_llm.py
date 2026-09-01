@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from app.utils.translation.extract_text_by_llm import ExtractText
+from app.utils.translation.extract_text_by_llm import ExtractTextByLlm
 
 
 @pytest.mark.integration
@@ -18,7 +18,7 @@ async def test_extract_text_with_structure_from_html(capsys):
     (Path(__file__).parent / "data" / "article_slots.json").read_text()
 )["article_1"]["text"]
 
-    result = await ExtractText().extract_text_with_structure_byLLM(
+    result = await ExtractTextByLlm().extract_text_with_structure_byLLM(
         html_content=ARTICLE_SLOTS,
     )
 

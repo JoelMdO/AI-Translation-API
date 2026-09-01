@@ -2,7 +2,6 @@ import pytest
 import json
 from pathlib import Path
 from app.utils.translation.extract_text import ExtractText
-from app.utils.translation.regenerate_json import regenerate_json
 from app.utils.translation.create_prompt_translation import create_prompt_translation
 from app.utils.translation.generate_translation import generate_translation
 
