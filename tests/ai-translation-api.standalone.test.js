@@ -42,7 +42,7 @@ test("AI Translation API translates through the live Ollama container", async ()
   });
 
   expect(response.status).toBe(200);
-  expect(body.success).toBe(true);
+  expect(body.status).toBe(200);
   expect(body.model_used).toEqual(expect.any(String));
   expect(body.translated_text).toEqual(expect.objectContaining({
     title: expect.any(String),
