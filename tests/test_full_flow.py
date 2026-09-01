@@ -77,8 +77,7 @@ async def test_full_flow_translate_then_summarize_plain_text(async_client, monke
     translate_resp = await async_client.post('/api/translate', json=ARTICLE_PLAIN, headers=AUTH) #type: ignore
     assert translate_resp.status_code == 200 #type: ignore
     translated = translate_resp.json() #type: ignore
-    assert translated['success'] is True
-
+    assert translated["status"] == 200
     translated_title = translated['translated_text']['title'] #type: ignore
     translated_body  = translated['translated_text']['body'] #type: ignore
     assert len(translated_title) > 0 #type: ignore
