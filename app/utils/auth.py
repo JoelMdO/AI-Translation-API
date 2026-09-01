@@ -50,6 +50,7 @@ async def verify_google_access_token(credentials: HTTPAuthorizationCredentials =
             token_info = response.json()
             # Verify the token audience (client_id) if available
             if GOOGLE_CLIENT_ID and token_info.get("audience") != GOOGLE_CLIENT_ID:
+        
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token not issued for this client",
@@ -73,16 +74,16 @@ async def verify_google_access_token(credentials: HTTPAuthorizationCredentials =
                 name=str(user_info.get("name", "")),
                 verified=bool(user_info.get("verified_email", False))
             )
-    except httpx.RequestError as e:
+    except httpx.RequestError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token validation failed: {str(e)}",
+            detail="Token validation failed.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
+            detail="Authentication failed.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -101,7 +102,6 @@ def check_user_permissions(user_info: GoogleUser) -> bool:
     #     return False
     
     return True
-
 
 async def verify_user_access(credentials: HTTPAuthorizationCredentials = Depends(security)) -> GoogleUser:
     """

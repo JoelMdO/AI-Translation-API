@@ -1,12 +1,12 @@
 # ============================================================================== 
 # Author: Joel Montes de Oca Lopez
 # Creation Date: 25/07/2025
-# Last Modified: 25/07/2025
+# Last Modified: 1/09/2026
 # Contact: https://joelmontesdeoca.dev
 # 
 # Description:
-# This script contains the API routes for api translation with Ollama LLM, the api
-# gets called from CMS app for translation.
+# This script contains the API routes for api translation with Ollama LLM, using 
+# the models Llama 3.2 and Yag, the api gets called from CMS app for translation.
 #
 # Contained Routes:
 #
@@ -21,19 +21,18 @@
 # These routes are designed for use in a FastAPI environment, enabling seamless 
 # management of user accounts and their associated data.
 # ==============================================================================
-
 from fastapi import APIRouter, HTTPException, status, Depends
 # import uvicorn
 # import os
 from schemas.translation import TranslationRequest, TranslationResponse
-from services.translation import translation_service
+from services import translation_service
 from utils.auth import verify_user_access
 from schemas.testUser import GoogleUser
+import logging
+# 1. Configure the logger to accept INFO level messages
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# from app.schemas.translation import TranslationRequest, TranslationResponse
-# from app.services.translation import translation_service
-# from app.utils.auth import verify_user_access
-# from app.schemas.testUser import GoogleUser
 
 router = APIRouter()
 
@@ -41,7 +40,11 @@ router = APIRouter()
 # Route: /user/add
 # Description:  Create a new user
 # ===========================================================================
-@router.post("/translate", response_model=TranslationResponse)
+@router.post(
+    "/translate",
+    response_model=TranslationResponse,
+    response_model_exclude_none=True,
+)
 async def translate_text(
     request: TranslationRequest,
     current_user: GoogleUser = Depends(verify_user_access)
@@ -59,15 +62,26 @@ async def translate_text(
     - Token format: "Bearer <google_id_token>"
     - User must have verified email
     """
+    print(f"DEBUG: Received request at /api/translate")
     try:
         # Process translation through service layer
-        response = await translation_service.translate(request)
-        print(f"DEBUG: Translation successful: {response}")
-        return response
-        
+        response = await translation_service.TranslationService().translate(request)
+        print(
+            "/// Translation response: "
+            f"{response.model_dump(mode='json', exclude_none=True)}"
+        )
+        print(f"/// Translation response status: {response.status}")
+        if response.status == 200:
+            print(f"TRANSLATE ROUTER: Translation successful for user: {current_user.email}")
+            return response
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Translation failed."
+            )
     except Exception as e:
-        print(f"DEBUG: Translation failed: {str(e)}")
+        print(f"Translation failed for user: {current_user.email}, error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Translation failed: {str(e)}"
+            detail="Translation failed."
         )
