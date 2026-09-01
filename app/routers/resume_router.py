@@ -31,7 +31,10 @@ from schemas.translation import ResumeRequest, ResumeResponse
 from services.summary import summary_service
 from utils.auth import verify_user_access
 from schemas.testUser import GoogleUser
-
+import logging
+# 1. Configure the logger to accept INFO level messages
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # ===========================================================================

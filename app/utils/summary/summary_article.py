@@ -5,16 +5,14 @@ Manages all interactions with the Ollama summary creation service with HTML pres
 import httpx
 from utils.translation.generate_translation import generate_translation
 from utils.summary.create_prompt_summary import create_prompt_summary
-from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL
-##//TODO remove app before deploying 
-# from app.config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+from config import OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, OLLAMA_BACKUP_MODEL, OLLAMA_REQUEST_TIMEOUT
 
 class SummaryUtils:
     """Service class for summarizing HTML content while preserving structure using Ollama LLM"""
 
     def __init__(self):
         self.base_url = OLLAMA_BASE_URL
-        self.timeout = 90.0
+        self.timeout = OLLAMA_REQUEST_TIMEOUT
         self.model = OLLAMA_DEFAULT_MODEL or OLLAMA_BACKUP_MODEL  # Fallback if env var is not set
     
     async def check_health(self) -> bool:

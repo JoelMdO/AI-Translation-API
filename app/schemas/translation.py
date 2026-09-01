@@ -2,7 +2,9 @@
 Pydantic schemas for request/response models
 Defines the structure of data that comes in and goes out of the API
 """
-from pydantic import BaseModel, Field
+from typing import ClassVar, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TranslationRequest(BaseModel):
@@ -14,14 +16,37 @@ class TranslationRequest(BaseModel):
     model: str = Field(default="llama3.2", description="Ollama model to use")
 
 
+class TranslatedSegment(BaseModel):
+
+    id: int = Field(..., description="Stable segment identifier")
+    tag: str | None = Field(default=None, description="Source HTML tag")
+    text: Optional[str] | None = Field(default=None, description="Translated text, when present")
+    src: Optional[str]  | None = Field(default=None, description="Image source URL")
+    alt: Optional[str]  | None = Field(default=None, description="Image alternative text")
+    href: Optional[str]  | None = Field(default=None, description="Anchor destination URL")
+
+    @field_validator("text", "src", "alt", "href", mode="before")
+    @classmethod
+    def empty_optional_values_as_none(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+
+class TranslatedText(BaseModel):
+
+    title: str | list[TranslatedSegment] = Field(..., description="Translated title")
+    body: str | list[TranslatedSegment] = Field(..., description="Translated body")
+    section: str | list[TranslatedSegment] = Field(..., description="Translated section")
+
+
 class TranslationResponse(BaseModel):
     """Response schema for translation endpoint"""
-    translated_text: dict[str, str] = Field(..., description="The translated text as a JSON object with keys: title, body, section")
-    success: bool = Field(..., description="Whether translation was successful")
+    translated_text: TranslatedText = Field(..., description="Translated text segments")
+    status: int = Field(..., description="HTTP status code of the translation operation")
     model_used: str = Field(..., description="Model used for translation")
+    model_config: ClassVar[ConfigDict] = ConfigDict(protected_namespaces=())
 
-    class Config:
-        protected_namespaces = ()
 
 
 class HealthResponse(BaseModel):

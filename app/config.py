@@ -18,6 +18,7 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
 OLLAMA_DEFAULT_MODEL = os.getenv("OLLAMA_DEFAULT_MODEL")
 OLLAMA_BACKUP_MODEL = os.getenv("OLLAMA_BACKUP_MODEL")
+OLLAMA_REQUEST_TIMEOUT = float(os.getenv("OLLAMA_REQUEST_TIMEOUT", "900"))
 TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
 DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 

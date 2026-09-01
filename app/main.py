@@ -11,7 +11,7 @@ from utils.translation.translate_html_utils import translateHTML_utils as ollama
 # from utils.rag_service import rag_service
 # from utils.rag_service.rag_ingestion import ingest_all, is_populated
 from utils.translation.generate_translation import generate_translation
-from config import OLLAMA_BASE_URL
+from config import OLLAMA_BASE_URL, OLLAMA_REQUEST_TIMEOUT
 from config import ALLOWED_ORIGINS, CORS_METHODS, CORS_ALLOW_HEADERS
 from routers import resume_router, translate_router
 from routers import rag_router
@@ -49,7 +49,11 @@ async def lifespan(app: FastAPI):
             # Use a slightly longer timeout for warmup
             if OLLAMA_BASE_URL is None:
                 raise RuntimeError("OLLAMA_BASE_URL is not configured. Set OLLAMA_BASE_URL in config.")
-            resp = await generate_translation(warmup_prompt, timeout=30.0, base_url=OLLAMA_BASE_URL)
+            resp = await generate_translation(
+                warmup_prompt,
+                timeout=OLLAMA_REQUEST_TIMEOUT,
+                base_url=OLLAMA_BASE_URL,
+            )
             logger.info("🔁 Warmup response: %s", (resp or '')[:200])
         except Exception as e:
             logger.warning("Warmup request failed: %s", str(e))
