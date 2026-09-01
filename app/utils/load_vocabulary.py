@@ -44,9 +44,12 @@ def _load() -> None:
 
 def language_key(language: str) -> str:
     """Normalize language name to a consistent key format."""
-    if language == "Spanish":
+    lang = language.strip().lower()
+    if lang in ("spanish", "es"):
+        return "es"
+    if lang in ("english", "en"):
         return "en"
-    return "en"
+    return (lang[:2] or "en")
 
 def get_vocabulary(language: str) -> Dict[str, str]:
     """Return the EN→target or ES→target term map for the given language."""
