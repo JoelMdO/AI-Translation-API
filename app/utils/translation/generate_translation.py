@@ -15,7 +15,7 @@ async def generate_translation(prompt: str, timeout: float, base_url: str, model
             timeout_cfg = httpx.Timeout(cur_timeout)
             async with httpx.AsyncClient(timeout=timeout_cfg) as client:
 
-                use_model = "llama3.2"  # Hardcoded model for now; can be parameterized later
+                use_model = model or "llama3.2"
                 payload = { # type: ignore
                     "model": use_model,
                     "prompt": prompt,
