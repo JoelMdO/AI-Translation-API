@@ -51,8 +51,9 @@ class ExtractText:
                 return { # type: ignore
                     "type": "image", 
                     "tag": tag,
-                    "src": el.get("src"), # type: ignore
-                    "alt": el.get("alt", "") # type: ignore
+                    "src": el.get("src", ""), # type: ignore
+                    "alt": el.get("alt", ""), # type: ignore
+                    "data-ref-id": el.get("data-ref-id", "") # type: ignore
                 }
 
             if tag == "hr":
@@ -145,7 +146,7 @@ class ExtractText:
 
                 if node.get("tag") in {"img"}: # type: ignore
                     print("======FOUND IMG  NODE:=====", node.get("tag"), flush=True) # type: ignore
-                    texts.append({"id": paragraph_id, "tag": node.get("tag"), "src": node.get("src", ""), "alt": node.get("alt", "")}) # type: ignore
+                    texts.append({"id": paragraph_id, "tag": node.get("tag"), "src": node.get("src", ""), "alt": node.get("alt", ""), "data-ref-id": node.get("data-ref-id", "")}) # type: ignore
                     print(f"//IMG NODE: Added structural node with: {node}", flush=True)
                     paragraph_id += 1
                 if node.get("tag") in {"a"}: # type: ignore
