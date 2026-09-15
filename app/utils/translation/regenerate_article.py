@@ -55,13 +55,13 @@ class RegenerateArticle:
                 tag = (segment.get("tag") or "").lower()
 
                 if tag in IMAGE_TAGS:
-                    src = segment.get("src") or ""
                     alt = segment.get("alt") or ""
-                    html_parts[self.index] = f'<img src="{src}" alt="{alt}" />'
+                    data_ref = segment.get("data-ref-id") or ""
+                    html_parts[self.index] = f'<img alt="{alt}" data-ref-id="{data_ref}"/><br>'
                 elif tag in ANCHOR_TAGS:
                     href = segment.get("href") or ""
                     text = segment.get("text") or ""
-                    html_parts[self.index] = f'<a href="{href}">{text}</a>'
+                    html_parts[self.index] = f'<a href="{href}">{text}</a><br>'
                 elif tag == "hr":
                     html_parts[self.index] = "<hr />"
                 elif tag:
