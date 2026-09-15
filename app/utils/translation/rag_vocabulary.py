@@ -9,7 +9,7 @@ class RagVocabulary:
 
     def load_vocabulary(self) -> Dict[str, str]:
         """Load vocabulary from the JSON file based on the specified language."""
-        vocab_path = os.path.join(os.path.dirname(__file__), "..", "data", "vocabulary.json")
+        vocab_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "vocabulary.json")
         try:
             with open(vocab_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
